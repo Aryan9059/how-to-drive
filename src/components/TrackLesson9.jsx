@@ -1,0 +1,120 @@
+// Lesson 9: Slalom Course — weave through cones at controlled speed
+import { useRef } from "react";
+import { useBox } from "@react-three/cannon";
+
+const StaticBox = ({ position, args, color = "#888", emissive="#000", emissiveIntensity=0 }) => {
+  useBox(() => ({ type: "Static", args, position }), useRef(null));
+  return (
+    <mesh position={position} castShadow receiveShadow>
+      <boxGeometry args={args} />
+      <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={emissiveIntensity} roughness={0.8} />
+    </mesh>
+  );
+};
+
+// Slalom cone — visual only (no physics, player must avoid them)
+const Cone = ({ position, color = "#ff3300" }) => (
+  <group position={position}>
+    <mesh position={[0, 0.4, 0]} castShadow>
+      <coneGeometry args={[0.3, 0.8, 8]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+    <mesh position={[0, 0.05, 0]}>
+      <cylinderGeometry args={[0.4, 0.4, 0.1, 8]} />
+      <meshStandardMaterial color="#fff" />
+    </mesh>
+  </group>
+);
+
+const TrackLesson9 = () => {
+  // Slalom positions — alternating left/right of centre
+  const slalomCones = [
+    [10, 3.5], [16, -3.5], [22, 3.5], [28, -3.5],
+    [34, 3.5], [40, -3.5], [46, 3.5], [52, -3.5],
+    [58, 3.5], [64, -3.5],
+  ];
+
+  return (
+    <>
+      {/* Ground */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[35, 0, -3]} receiveShadow>
+        <planeGeometry args={[180, 60]} />
+        <meshStandardMaterial color="#4a7040" roughness={1} />
+      </mesh>
+
+      {/* Wide road */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[35, 0.01, -3]} receiveShadow>
+        <planeGeometry args={[180, 18]} />
+        <meshStandardMaterial color="#2a2a2a" roughness={0.9} />
+      </mesh>
+
+      {/* Tarmac edge lines */}
+      <mesh rotation={[-Math.PI/2,0,0]} position={[35, 0.02, 5.8]}>
+        <planeGeometry args={[180, 0.3]} />
+        <meshStandardMaterial color="#fff" opacity={0.5} transparent />
+      </mesh>
+      <mesh rotation={[-Math.PI/2,0,0]} position={[35, 0.02, -11.8]}>
+        <planeGeometry args={[180, 0.3]} />
+        <meshStandardMaterial color="#fff" opacity={0.5} transparent />
+      </mesh>
+
+      {/* Start line */}
+      <mesh rotation={[-Math.PI/2,0,0]} position={[-8, 0.02, -3]}>
+        <planeGeometry args={[0.5, 18]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
+
+      {/* Entry cones to mark start of slalom */}
+      <Cone position={[5, 0, 7]}  color="#ffdd00" />
+      <Cone position={[5, 0, -13]} color="#ffdd00" />
+
+      {/* Slalom cones */}
+      {slalomCones.map(([x, z], i) => (
+        <Cone key={`sc-${i}`} position={[x, 0, z + (-3)]} color={i % 2 === 0 ? "#ff3300" : "#0044ff"} />
+      ))}
+
+      {/* Double cone danger markers */}
+      {slalomCones.map(([x, z], i) => (
+        <Cone key={`sc2-${i}`} position={[x + 1.2, 0, z + (-3)]} color={i % 2 === 0 ? "#ff5500" : "#0066ff"} />
+      ))}
+
+      {/* Finish arch */}
+      <StaticBox position={[74, 2.5, 5.5]}  args={[0.4,5,0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.6} />
+      <StaticBox position={[74, 2.5, -11.5]} args={[0.4,5,0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.6} />
+      <mesh position={[74, 5.3, -3]}>
+        <boxGeometry args={[0.3,0.4,17]} />
+        <meshStandardMaterial color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
+      </mesh>
+
+      {/* Chequered finish on ground */}
+      {[0,1,2,3,4,5,6,7].map(i=>(
+        <mesh key={`cf-${i}`} rotation={[-Math.PI/2,0,0]} position={[74, 0.03, -10 + i*2]}>
+          <planeGeometry args={[0.6, 2]} />
+          <meshStandardMaterial color={i%2===0?"#000":"#fff"} />
+        </mesh>
+      ))}
+
+      {/* Speed zone label strip */}
+      <mesh rotation={[-Math.PI/2,0,0]} position={[35, 0.015, -3]}>
+        <planeGeometry args={[65, 0.3]} />
+        <meshStandardMaterial color="#ffcc00" opacity={0.25} transparent />
+      </mesh>
+
+      {/* Trees */}
+      {Array.from({length:18}).map((_,i)=>(
+        <group key={`t${i}`}>
+          <group position={[-30+i*10, 0, 11]}>
+            <mesh position={[0,1.2,0]} castShadow><cylinderGeometry args={[0.3,0.4,2.4]} /><meshStandardMaterial color="#5c3d1e" /></mesh>
+            <mesh position={[0,3.5,0]} castShadow><sphereGeometry args={[1.8,8,7]} /><meshStandardMaterial color="#1a5c10" /></mesh>
+          </group>
+          <group position={[-30+i*10, 0, -18]}>
+            <mesh position={[0,1.2,0]} castShadow><cylinderGeometry args={[0.3,0.4,2.4]} /><meshStandardMaterial color="#5c3d1e" /></mesh>
+            <mesh position={[0,3.5,0]} castShadow><sphereGeometry args={[1.8,8,7]} /><meshStandardMaterial color="#1a5c10" /></mesh>
+          </group>
+        </group>
+      ))}
+    </>
+  );
+};
+
+export default TrackLesson9;
