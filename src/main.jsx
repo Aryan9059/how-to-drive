@@ -27,8 +27,9 @@ const App = () => {
   const [gameMode,    setGameMode]    = useState("menu"); // "menu"|"lesson"|"freeDrive"
   const [lessonId,    setLessonId]    = useState("lesson1");
   const [trackId,     setTrackId]     = useState("track1");
+  const [timeOfDay,   setTimeOfDay]   = useState("day");
   const [lessonPhase, setLessonPhase] = useState("intro"); // "intro"|"active"|"passed"|"failed"
-  const [canvasKey,   setCanvasKey]   = useState(0); // remount canvas to reset physics
+  const [canvasKey,   setCanvasKey]   = useState(0);
 
   // ── Navigation helpers ─────────────────────────────────────────────────────
   const goMenu = useCallback(() => {
@@ -44,9 +45,10 @@ const App = () => {
     setGameMode("lesson");
   }, []);
 
-  const startFreeDrive = useCallback((tid, diff) => {
+  const startFreeDrive = useCallback((tid, diff, tod = "day") => {
     setTrackId(tid);
     setDifficulty(diff);
+    setTimeOfDay(tod);
     setCanvasKey((k) => k + 1);
     setGameMode("freeDrive");
   }, []);
@@ -129,6 +131,7 @@ const App = () => {
             lessonId={lessonId}
             trackId={trackId}
             difficulty={difficulty}
+            timeOfDay={timeOfDay}
             onLessonPass={handleLessonPass}
             onLessonFail={handleLessonFail}
           />

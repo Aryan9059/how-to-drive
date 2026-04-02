@@ -2,6 +2,8 @@
 import Track1 from "./Track1";        // Forest (free drive)
 import Track2 from "./Track2";        // Desert Speedway (free drive)
 import Track3 from "./Track3";        // Night City (free drive)
+import Track4 from "./Track4";        // Snow Tundra (free drive)
+import Track5 from "./Track5";        // Volcanic Blaze (free drive)
 import HighwayTrack from "./HighwayTrack";  // Lesson 6 highway
 import TrackLesson1 from "./TrackLesson1";  // Lesson 1: Starting the Car
 import TrackLesson2 from "./TrackLesson2";  // Lesson 2: Moving & Stopping
@@ -26,7 +28,9 @@ const Track = ({ levelId = "lesson1" }) => {
     // Free drive tracks
     case "track2": return <Track2 />;
     case "track3": return <Track3 />;
-    default: return <Track1 />;
+    case "track4": return <Track4 />;
+    case "track5": return <Track5 />;
+    default:        return <Track1 />;
   }
 };
 

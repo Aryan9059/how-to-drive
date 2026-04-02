@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import simStore from "../simStore";
 import { GEAR_NAMES, ENGINE_CONFIG, LESSONS } from "../gameConfig";
+import TouchControls from "./TouchControls";
 
 // SVG circular arc gauge
 const Gauge = ({ value, max, color, label, unit, redline }) => {
@@ -63,6 +64,10 @@ const EngineLight = ({ state }) => {
   );
 };
 
+// Detect touchscreen
+const isTouchDevice = () =>
+  typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
 const SimHUD = ({ lessonId, mode }) => {
   const [tel, setTel] = useState({ ...simStore });
 
@@ -71,75 +76,97 @@ const SimHUD = ({ lessonId, mode }) => {
     return () => clearInterval(id);
   }, []);
 
-  const lesson = lessonId ? LESSONS.find((l) => l.id === lessonId) : null;
+  const lesson   = lessonId ? LESSONS.find((l) => l.id === lessonId) : null;
   const gearName = GEAR_NAMES[tel.gear] ?? "N";
+  const touch    = isTouchDevice();
 
   return (
-    <div className="simhud-root">
-      {/* ── Top-left: level badge ── */}
-      <div className="simhud-badge">
-        {mode === "lesson" && lesson ? (
-          <>
-            <span className="simhud-lv">L{LESSONS.indexOf(lesson) + 1}</span>
-            <span className="simhud-name">{lesson.title}</span>
-          </>
-        ) : (
-          <span className="simhud-name">Free Drive</span>
+    <>
+      <div className="simhud-root">
+        {/* ── Top-left: level badge ── */}
+        <div className="simhud-badge">
+          {mode === "lesson" && lesson ? (
+            <>
+              <span className="simhud-lv">L{LESSONS.indexOf(lesson) + 1}</span>
+              <span className="simhud-name">{lesson.title}</span>
+            </>
+          ) : (
+            <span className="simhud-name">Free Drive</span>
+          )}
+        </div>
+
+        {/* ── Top-center: objective ── */}
+        {lesson && (
+          <div className="simhud-objective">
+            🎯 {lesson.objective}
+          </div>
+        )}
+
+        {/* ── Top-right: headlight + ESC ── */}
+        <div className="simhud-topright">
+          <div
+            className={`simhud-headlight ${tel.headlightsOn ? "simhud-headlight--on" : ""}`}
+            title="H = Headlights"
+          >
+            {tel.headlightsOn ? "💡" : "🔦"}
+            <span className="simhud-headlight-lbl">{tel.headlightsOn ? "LIGHTS ON" : "LIGHTS OFF"}</span>
+          </div>
+          {!touch && (
+            <div className="simhud-esc">
+              <kbd className="hud-key">ESC</kbd> Menu
+            </div>
+          )}
+        </div>
+
+        {/* ── Bottom panel: gauges (hide on mobile — touch overlay has gear display) ── */}
+        {!touch && (
+          <div className="simhud-panel">
+            <Gauge
+              value={tel.rpm}
+              max={ENGINE_CONFIG.maxRpm}
+              color="#6366f1"
+              label="RPM"
+              unit="×1000"
+              redline={ENGINE_CONFIG.redlineRpm}
+            />
+
+            <div className="gear-display">
+              <div className="gear-digit">{gearName}</div>
+              <div className="gear-label">GEAR</div>
+              <EngineLight state={tel.engineState} />
+              <ShiftIndicator rpm={tel.rpm} />
+            </div>
+
+            <Gauge
+              value={tel.speed}
+              max={200}
+              color="#22d3ee"
+              label="SPEED"
+              unit="km/h"
+            />
+          </div>
+        )}
+
+        {/* ── Bottom-left: key reference (desktop only) ── */}
+        {!touch && (
+          <div className="simhud-keys">
+            <div className="key-row"><kbd className="hud-key">I</kbd><span>Ignition</span></div>
+            <div className="key-row"><kbd className="hud-key">W/S</kbd><span>Throttle/Brake</span></div>
+            <div className="key-row"><kbd className="hud-key">E/Q</kbd><span>Gear ▲/▼</span></div>
+            <div className="key-row"><kbd className="hud-key">CTRL</kbd><span>Clutch</span></div>
+            <div className="key-row"><kbd className="hud-key">SPACE</kbd><span>Handbrake</span></div>
+            <div className="key-row"><kbd className="hud-key">H</kbd><span>Headlights</span></div>
+            <div className="key-row"><kbd className="hud-key">F</kbd><span>Horn</span></div>
+            <div className="key-row"><kbd className="hud-key">C</kbd><span>Camera</span></div>
+          </div>
         )}
       </div>
 
-      {/* ── Top-center: objective ── */}
-      {lesson && (
-        <div className="simhud-objective">
-          🎯 {lesson.objective}
-        </div>
+      {/* ── Touch UI overlay (mobile only) ── */}
+      {touch && (
+        <TouchControls gear={tel.gear} headlightsOn={tel.headlightsOn} />
       )}
-
-      {/* ── Top-right: ESC hint ── */}
-      <div className="simhud-esc">
-        <kbd className="hud-key">ESC</kbd> Menu
-      </div>
-
-      {/* ── Bottom panel: gauges ── */}
-      <div className="simhud-panel">
-        {/* RPM gauge */}
-        <Gauge
-          value={tel.rpm}
-          max={ENGINE_CONFIG.maxRpm}
-          color="#6366f1"
-          label="RPM"
-          unit="×1000"
-          redline={ENGINE_CONFIG.redlineRpm}
-        />
-
-        {/* Gear display */}
-        <div className="gear-display">
-          <div className="gear-digit">{gearName}</div>
-          <div className="gear-label">GEAR</div>
-          <EngineLight state={tel.engineState} />
-          <ShiftIndicator rpm={tel.rpm} />
-        </div>
-
-        {/* Speed gauge */}
-        <Gauge
-          value={tel.speed}
-          max={200}
-          color="#22d3ee"
-          label="SPEED"
-          unit="km/h"
-        />
-      </div>
-
-      {/* ── Bottom-left: key reference ── */}
-      <div className="simhud-keys">
-        <div className="key-row"><kbd className="hud-key">I</kbd><span>Ignition</span></div>
-        <div className="key-row"><kbd className="hud-key">W/S</kbd><span>Throttle/Brake</span></div>
-        <div className="key-row"><kbd className="hud-key">E/Q</kbd><span>Gear ▲/▼</span></div>
-        <div className="key-row"><kbd className="hud-key">CTRL</kbd><span>Clutch</span></div>
-        <div className="key-row"><kbd className="hud-key">SPACE</kbd><span>Handbrake</span></div>
-        <div className="key-row"><kbd className="hud-key">C</kbd><span>Camera</span></div>
-      </div>
-    </div>
+    </>
   );
 };
 

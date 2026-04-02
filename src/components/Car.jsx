@@ -1,7 +1,7 @@
 import { useBox, useRaycastVehicle } from "@react-three/cannon";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { useFrame, useLoader } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useCallback } from "react";
 import useWheels from "../hooks/useWheels";
 import useControls from "../hooks/useControls";
 import useEngine from "../hooks/useEngine";
@@ -37,11 +37,11 @@ const Car = ({
     () => ({
       allowSleep: false,
       args: [width, height, length],
-      mass: 500,                          // ✅ heavier = less bouncing
+      mass: 500,
       rotation: startRotation,
       position: startPosition,
-      linearDamping: 0.25,               // ✅ dampens sliding/drift
-      angularDamping: 0.6,               // ✅ prevents flipping & wobble
+      linearDamping: 0.25,
+      angularDamping: 0.6,
     }),
     useRef(null)
   );
@@ -60,36 +60,62 @@ const Car = ({
   );
 
   const { engineState, gear, toggleIgnition, shiftUp, shiftDown, stallEngine } = useEngine(difficulty);
-  const keys = useControls({ toggleIgnition, shiftUp, shiftDown });
+
+  // ── Headlights & horn ──────────────────────────────────────────────────────
+  const toggleHeadlights = useCallback(() => {
+    simStore.headlightsOn = !simStore.headlightsOn;
+  }, []);
+
+  const hornHonk = useCallback(() => {
+    simStore.hornActive = true;
+    setTimeout(() => { simStore.hornActive = false; }, 400);
+  }, []);
+
+  const keys = useControls({ toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk });
+
+  // Poll touch flags for one-shot actions (gear, ignition, headlights, horn)
+  const prevTouch = useRef({});
+  useEffect(() => {
+    const id = setInterval(() => {
+      const t = simStore.touch;
+      if (t.KeyI && !prevTouch.current.KeyI) toggleIgnition();
+      if (t.KeyE && !prevTouch.current.KeyE) shiftUp();
+      if (t.KeyQ && !prevTouch.current.KeyQ) shiftDown();
+      if (t.KeyH && !prevTouch.current.KeyH) toggleHeadlights();
+      if (t.KeyF && !prevTouch.current.KeyF) hornHonk();
+      prevTouch.current = { ...t };
+    }, 50);
+    return () => clearInterval(id);
+  }, [toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk]);
 
   const engineStateRef = useRef(engineState);
   const gearRef = useRef(gear);
   useEffect(() => { engineStateRef.current = engineState; }, [engineState]);
   useEffect(() => { gearRef.current = gear; }, [gear]);
 
-  // ── Smoothing state refs ────────────────────────────────────────────────
-  const currentSteer = useRef(0);        // interpolated steering angle
-  const currentForce = useRef(0);        // interpolated engine force
-  const cameraPos = useRef(new Vector3());
+  // ── Smoothing state refs ───────────────────────────────────────────────────
+  const currentSteer = useRef(0);
+  const currentForce = useRef(0);
+  const cameraPos    = useRef(new Vector3());
   const cameraTarget = useRef(new Vector3());
 
   useFrame((state, delta) => {
     const k = keys.current;
 
-    const throttle = !!k.KeyW;
-    const brake = !!k.KeyS;
-    const handbrake = !!k.Space;
-    const steerLeft = !!k.KeyA;
+    const throttle   = !!k.KeyW;
+    const brake      = !!k.KeyS;
+    const handbrake  = !!k.Space;
+    const steerLeft  = !!k.KeyA;
     const steerRight = !!k.KeyD;
-    const clutch = difficulty === "easy" ? false : !!k.ControlLeft;
+    const clutch     = difficulty === "easy" ? false : !!k.ControlLeft;
 
     simStore.clutchPressed = clutch;
-    simStore.handbrake = handbrake;
+    simStore.handbrake     = handbrake;
 
     const eng = engineStateRef.current;
-    const g = gearRef.current;
+    const g   = gearRef.current;
 
-    // ── RPM simulation ────────────────────────────────────────────────────
+    // ── RPM simulation ─────────────────────────────────────────────────────
     if (eng === "on") {
       const { idleRpm, maxRpm, rpmRiseRate, rpmFallRate, stallRpm } = ENGINE_CONFIG;
       const effectiveThrottle = throttle && !clutch;
@@ -105,11 +131,11 @@ const Car = ({
       simStore.rpm = 0;
     }
 
-    // ── Engine force with smoothing ───────────────────────────────────────
-    const canDrive = eng === "on";
+    // ── Engine force with smoothing ────────────────────────────────────────
+    const canDrive     = eng === "on";
     const clutchFactor = clutch ? 0 : 1;
-    const ratio = GEAR_RATIOS[g] ?? 0;
-    const rpmFactor = Math.max(0, Math.min(1,
+    const ratio        = GEAR_RATIOS[g] ?? 0;
+    const rpmFactor    = Math.max(0, Math.min(1,
       (simStore.rpm - ENGINE_CONFIG.idleRpm) /
       (ENGINE_CONFIG.maxRpm - ENGINE_CONFIG.idleRpm)
     ));
@@ -117,37 +143,36 @@ const Car = ({
       ? ENGINE_CONFIG.maxEngineForce * ratio * rpmFactor * clutchFactor
       : 0;
 
-    // Lerp engine force so acceleration ramps up instead of snapping
     const forceBlend = throttle ? Math.min(1, delta * 6) : Math.min(1, delta * 10);
     currentForce.current += (targetForce - currentForce.current) * forceBlend;
 
     vehicleApi.applyEngineForce(-currentForce.current, 2);
     vehicleApi.applyEngineForce(-currentForce.current, 3);
 
-    // ── Braking ───────────────────────────────────────────────────────────
+    // ── Braking ────────────────────────────────────────────────────────────
     const brakeForce = brake ? ENGINE_CONFIG.maxBrakeForce : 0;
     for (let i = 0; i < 4; i++) vehicleApi.setBrake(brakeForce, i);
     if (handbrake) {
-      vehicleApi.setBrake(0, 0);
-      vehicleApi.setBrake(0, 1);
-      vehicleApi.setBrake(80, 2);        // ✅ rear only for handbrake
+      vehicleApi.setBrake(0,  0);
+      vehicleApi.setBrake(0,  1);
+      vehicleApi.setBrake(80, 2);
       vehicleApi.setBrake(80, 3);
     }
 
-    // ── Smooth steering via lerp ──────────────────────────────────────────
-    const speed = simStore.speed;                    // km/h
-    const maxSteer = Math.max(0.2, 0.55 - speed * 0.004); // reduce steer at high speed
+    // ── Smooth steering via lerp ───────────────────────────────────────────
+    const speed       = simStore.speed;
+    const maxSteer    = Math.max(0.2, 0.55 - speed * 0.004);
     const targetSteer = steerLeft ? maxSteer : steerRight ? -maxSteer : 0;
-    const steerSpeed = steerLeft || steerRight ? 5 : 8;  // return-to-center faster
+    const steerSpeed  = steerLeft || steerRight ? 5 : 8;
     currentSteer.current += (targetSteer - currentSteer.current) * Math.min(1, delta * steerSpeed);
 
     const s = currentSteer.current;
-    vehicleApi.setSteeringValue(s, 0);
-    vehicleApi.setSteeringValue(s, 1);
-    vehicleApi.setSteeringValue(-s * 0.15, 2);  // slight rear counter-steer
+    vehicleApi.setSteeringValue( s,        0);
+    vehicleApi.setSteeringValue( s,        1);
+    vehicleApi.setSteeringValue(-s * 0.15, 2);
     vehicleApi.setSteeringValue(-s * 0.15, 3);
 
-    // ── Reset ─────────────────────────────────────────────────────────────
+    // ── Reset ──────────────────────────────────────────────────────────────
     if (k.KeyR) {
       chassisApi.position.set(...startPosition);
       chassisApi.velocity.set(0, 0, 0);
@@ -157,11 +182,11 @@ const Car = ({
       currentForce.current = 0;
     }
 
-    // ── Speed telemetry ───────────────────────────────────────────────────
+    // ── Speed telemetry ────────────────────────────────────────────────────
     const [vx, vy, vz] = velocity.current;
     simStore.speed = Math.sqrt(vx * vx + vy * vy + vz * vz) * 3.6;
 
-    // ── Camera ────────────────────────────────────────────────────────────
+    // ── Camera ─────────────────────────────────────────────────────────────
     if (cameraView == 0) return;
 
     const worldPos = new Vector3();
@@ -172,7 +197,7 @@ const Car = ({
     quaternion.setFromRotationMatrix(chassisBody.current.matrixWorld);
 
     let cameraDelta = new Vector3(0, 0.5, 0);
-    let lookTarget = worldPos.clone();
+    let lookTarget  = worldPos.clone();
 
     if (cameraView == 1) cameraDelta = new Vector3(0, 2, -5);
     if (cameraView == 2) cameraDelta = new Vector3(0, 2, 5);
@@ -184,7 +209,6 @@ const Car = ({
     cameraDelta.applyQuaternion(quaternion);
     const desiredCamPos = worldPos.clone().add(cameraDelta);
 
-    // ✅ Smooth camera with lerp so it doesn't snap/jerk
     const camBlend = Math.min(1, delta * 8);
     cameraPos.current.lerp(desiredCamPos, camBlend);
     cameraTarget.current.lerp(lookTarget, camBlend);
@@ -197,7 +221,48 @@ const Car = ({
     <group ref={vehicle} name="vehicle">
       <group ref={chassisBody} name="chassisBody">
         <primitive object={CarBody} rotation-y={-Math.PI / 2} position={[0, -0.15, 0]} />
+
+        {/* ── Headlight spotlights ── */}
+        <spotLight
+          position={[0.45, 0.15, 1.35]}
+          angle={0.35}
+          penumbra={0.3}
+          intensity={simStore.headlightsOn ? 60 : 0}
+          color="#fff8e7"
+          distance={28}
+          castShadow={false}
+        />
+        <spotLight
+          position={[-0.45, 0.15, 1.35]}
+          angle={0.35}
+          penumbra={0.3}
+          intensity={simStore.headlightsOn ? 60 : 0}
+          color="#fff8e7"
+          distance={28}
+          castShadow={false}
+        />
+
+        {/* Headlight lens glows */}
+        <mesh position={[0.45, 0.15, 1.42]}>
+          <sphereGeometry args={[0.09, 8, 8]} />
+          <meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} />
+        </mesh>
+        <mesh position={[-0.45, 0.15, 1.42]}>
+          <sphereGeometry args={[0.09, 8, 8]} />
+          <meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} />
+        </mesh>
+
+        {/* Tail light glows */}
+        <mesh position={[0.42, 0.1, -1.42]}>
+          <sphereGeometry args={[0.07, 8, 8]} />
+          <meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} />
+        </mesh>
+        <mesh position={[-0.42, 0.1, -1.42]}>
+          <sphereGeometry args={[0.07, 8, 8]} />
+          <meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} />
+        </mesh>
       </group>
+
       <group ref={wheels[0]} name="WheelRF">
         <primitive object={WheelRF} rotation-y={-Math.PI / 2} position={[0, 0, 0]} />
       </group>

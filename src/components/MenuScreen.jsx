@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { LESSONS, FREE_DRIVE_TRACKS } from "../gameConfig";
+import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY } from "../gameConfig";
 
 const MenuScreen = ({
   onStartLesson,   // (lessonId, difficulty) => void
-  onFreeDrive,     // (trackId, difficulty) => void
+  onFreeDrive,     // (trackId, difficulty, timeOfDay) => void
   completedLessons, // Set<string>
   difficulty,
   onDifficultyChange,
 }) => {
-  const [tab, setTab] = useState("lessons"); // "lessons" | "freeDrive"
+  const [tab,            setTab]            = useState("lessons"); // "lessons" | "freeDrive"
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [selectedTrack,  setSelectedTrack]  = useState("track1");
+  const [selectedTod,    setSelectedTod]    = useState("day");
 
   const isUnlocked = (idx) => true;
 
@@ -67,7 +68,7 @@ const MenuScreen = ({
                       <h3 className="level-card-name">{lesson.title}</h3>
                       <p className="level-card-desc">{lesson.description}</p>
                     </div>
-                    {done  && <span className="done-badge">✓ Done</span>}
+                    {done     && <span className="done-badge">✓ Done</span>}
                     {!unlocked && <span className="lock-badge">Locked</span>}
                     <div className="level-card-check">✓</div>
                   </button>
@@ -88,6 +89,23 @@ const MenuScreen = ({
         {/* ── Free Drive tab ── */}
         {tab === "freeDrive" && (
           <>
+            {/* Time of Day selector */}
+            <div className="tod-row">
+              <span className="tod-label">Time of Day:</span>
+              <div className="tod-btns">
+                {TIME_OF_DAY.map((t) => (
+                  <button
+                    key={t.id}
+                    className={`tod-btn ${selectedTod === t.id ? "tod-btn--active" : ""}`}
+                    onClick={() => setSelectedTod(t.id)}
+                  >
+                    <span className="tod-icon">{t.icon}</span>
+                    <span className="tod-lbl">{t.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="level-grid">
               {FREE_DRIVE_TRACKS.map((t) => (
                 <button
@@ -98,6 +116,7 @@ const MenuScreen = ({
                   <div className="level-card-icon" style={{ fontSize: "2.5rem" }}>{t.icon}</div>
                   <div className="level-card-info">
                     <h3 className="level-card-name">{t.name}</h3>
+                    <p className="level-card-desc">{t.desc || ""}</p>
                   </div>
                   <div className="level-card-check">✓</div>
                 </button>
@@ -105,7 +124,7 @@ const MenuScreen = ({
             </div>
             <button
               className="play-btn"
-              onClick={() => onFreeDrive(selectedTrack, difficulty)}
+              onClick={() => onFreeDrive(selectedTrack, difficulty, selectedTod)}
             >
               <span className="play-btn-text">FREE DRIVE</span>
               <span className="play-btn-arrow">▶</span>
@@ -115,7 +134,7 @@ const MenuScreen = ({
 
         {/* Controls */}
         <footer className="menu-controls">
-          {[["I","Ignition"],["W/S","Drive/Brake"],["E/Q","Gear ▲/▼"],["CTRL","Clutch"],["SPACE","Handbrake"],["R","Reset"],["C","Camera"],["ESC","Menu"]].map(([k,l])=>(
+          {[["I","Ignition"],["W/S","Drive/Brake"],["E/Q","Gear ▲/▼"],["CTRL","Clutch"],["SPACE","Handbrake"],["H","Headlights"],["F","Horn"],["R","Reset"],["C","Camera"],["ESC","Menu"]].map(([k,l])=>(
             <div key={k} className="ctrl-item">
               <kbd className="ctrl-key">{k}</kbd>
               <span className="ctrl-label">{l}</span>

@@ -10,6 +10,22 @@ const simStore = {
   // Input state (written by Car in useFrame)
   clutchPressed: false,
   handbrake: false,
+  // Extras
+  headlightsOn: false,
+  hornActive: false,
+  // Touch virtual keys (written by TouchControls, read by Car same as keyboard)
+  touch: {
+    KeyW: false,
+    KeyS: false,
+    KeyA: false,
+    KeyD: false,
+    Space: false,
+    KeyE: false,
+    KeyQ: false,
+    KeyI: false,
+    KeyH: false,
+    KeyF: false,
+  },
 };
 
 export default simStore;
