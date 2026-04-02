@@ -19,7 +19,7 @@ const StopLine = ({
     const [px, , pz] = simPos();
     const speed = window._simSpeed || 0;
 
-    const inX   = Math.abs(px - lx) < width / 2;
+    const inX = Math.abs(px - lx) < width / 2;
     const inZone = pz > lz && pz < lz + zoneDepth;
     const stopped = speed < requiredSpeed;
 

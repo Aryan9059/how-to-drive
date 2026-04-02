@@ -13,6 +13,17 @@ const simStore = {
   // Extras
   headlightsOn: false,
   hornActive: false,
+
+  // Star Rating Telemetry
+  metrics: {
+    startTime: 0,
+    endTime: 0,
+    mistakes: 0,
+    hardBrakes: 0,
+    lastSpeed: 0,
+    isHardBraking: false,
+  },
+
   // Touch virtual keys (written by TouchControls, read by Car same as keyboard)
   touch: {
     KeyW: false,

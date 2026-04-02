@@ -1,37 +1,41 @@
 import "./assets/global.css";
-import { Canvas }   from "@react-three/fiber";
-import ReactDOM      from "react-dom/client";
+import { Canvas } from "@react-three/fiber";
+import ReactDOM from "react-dom/client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Physics }   from "@react-three/cannon";
-import Scene         from "./components/Scene";
-import MenuScreen    from "./components/MenuScreen";
-import SimHUD        from "./components/SimHUD";
+import { Physics } from "@react-three/cannon";
+import Scene from "./components/Scene";
+import MenuScreen from "./components/MenuScreen";
+import SimHUD from "./components/SimHUD";
 import LessonOverlay from "./components/LessonOverlay";
-import { LESSONS }   from "./gameConfig";
+import { LESSONS } from "./gameConfig";
+import simStore from "./simStore";
 
-// Load completed lessons from localStorage
+// Load completed lessons from localStorage (maps ID -> stars)
 const loadCompleted = () => {
-  try { return new Set(JSON.parse(localStorage.getItem("completedLessons") || "[]")); }
-  catch { return new Set(); }
+  try {
+    const data = JSON.parse(localStorage.getItem("completedLessons") || "{}");
+    // Migrate old array format to object format
+    if (Array.isArray(data)) {
+      return data.reduce((acc, id) => ({ ...acc, [id]: 1 }), {});
+    }
+    return data;
+  } catch { return {}; }
 };
-const saveCompleted = (set) => {
-  localStorage.setItem("completedLessons", JSON.stringify([...set]));
+const saveCompleted = (obj) => {
+  localStorage.setItem("completedLessons", JSON.stringify(obj));
 };
 
 const App = () => {
-  // ── Persistent state ───────────────────────────────────────────────────────
-  const [difficulty,       setDifficulty]       = useState("easy");
+  const [difficulty, setDifficulty] = useState("easy");
   const [completedLessons, setCompletedLessons] = useState(loadCompleted);
 
-  // ── Game state ─────────────────────────────────────────────────────────────
-  const [gameMode,    setGameMode]    = useState("menu"); // "menu"|"lesson"|"freeDrive"
-  const [lessonId,    setLessonId]    = useState("lesson1");
-  const [trackId,     setTrackId]     = useState("track1");
-  const [timeOfDay,   setTimeOfDay]   = useState("day");
-  const [lessonPhase, setLessonPhase] = useState("intro"); // "intro"|"active"|"passed"|"failed"
-  const [canvasKey,   setCanvasKey]   = useState(0);
+  const [gameMode, setGameMode] = useState("menu");
+  const [lessonId, setLessonId] = useState("lesson1");
+  const [trackId, setTrackId] = useState("track1");
+  const [timeOfDay, setTimeOfDay] = useState("day");
+  const [lessonPhase, setLessonPhase] = useState("intro");
+  const [canvasKey, setCanvasKey] = useState(0);
 
-  // ── Navigation helpers ─────────────────────────────────────────────────────
   const goMenu = useCallback(() => {
     setGameMode("menu");
     setLessonPhase("intro");
@@ -59,16 +63,41 @@ const App = () => {
   }, []);
 
   const nextLesson = useCallback(() => {
-    const idx  = LESSONS.findIndex((l) => l.id === lessonId);
+    const idx = LESSONS.findIndex((l) => l.id === lessonId);
     const next = LESSONS[idx + 1];
     if (next) startLesson(next.id, difficulty);
     else goMenu();
   }, [lessonId, difficulty, startLesson, goMenu]);
 
-  // ── Lesson outcomes ────────────────────────────────────────────────────────
+  // Track run time metrics
+  useEffect(() => {
+    if (lessonPhase === "active") {
+      simStore.metrics = {
+        startTime: performance.now(),
+        endTime: 0,
+        mistakes: 0,
+        hardBrakes: 0,
+        lastSpeed: 0,
+        isHardBraking: false
+      };
+    }
+  }, [lessonPhase]);
+
   const handleLessonPass = useCallback(() => {
+    simStore.metrics.endTime = performance.now();
+    const timeTaken = (simStore.metrics.endTime - simStore.metrics.startTime) / 1000;
+
+    const lesson = LESSONS.find((l) => l.id === lessonId);
+    const criteria = lesson.stars || { time: 999, mistakes: 0, hardBrakes: 0 };
+
+    const earnedStars =
+      (timeTaken <= criteria.time ? 1 : 0) +
+      (simStore.metrics.mistakes <= criteria.mistakes ? 1 : 0) +
+      (simStore.metrics.hardBrakes <= criteria.hardBrakes ? 1 : 0);
+
     setCompletedLessons((prev) => {
-      const next = new Set(prev).add(lessonId);
+      const currentStars = prev[lessonId] || 0;
+      const next = { ...prev, [lessonId]: Math.max(currentStars, earnedStars) };
       saveCompleted(next);
       return next;
     });
@@ -79,7 +108,6 @@ const App = () => {
     setLessonPhase("failed");
   }, []);
 
-  // ── ESC → menu ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const onKey = (e) => {
       if (e.code === "Escape" && gameMode !== "menu") goMenu();
@@ -88,7 +116,6 @@ const App = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [gameMode, goMenu]);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   if (gameMode === "menu") {
     return (
       <MenuScreen
@@ -103,12 +130,8 @@ const App = () => {
 
   return (
     <>
-      <SimHUD
-        lessonId={gameMode === "lesson" ? lessonId : null}
-        mode={gameMode}
-      />
+      <SimHUD lessonId={gameMode === "lesson" ? lessonId : null} mode={gameMode} />
 
-      {/* Lesson overlay (intro / pass / fail) — only in lesson mode */}
       {gameMode === "lesson" && lessonPhase !== "active" && (
         <LessonOverlay
           phase={lessonPhase}
@@ -121,10 +144,7 @@ const App = () => {
         />
       )}
 
-      <Canvas
-        key={canvasKey}
-        style={{ position: "fixed", inset: 0 }}
-      >
+      <Canvas key={canvasKey} style={{ position: "fixed", inset: 0 }}>
         <Physics broadphase="SAP" gravity={[0, -2.1, 0]}>
           <Scene
             mode={gameMode}

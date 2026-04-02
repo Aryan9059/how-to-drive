@@ -1,4 +1,3 @@
-// Lesson 1: Starting the Car — Simple open lot, one checkpoint gate ahead
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
 
@@ -12,19 +11,50 @@ const StaticBox = ({ position, args, color = "#888", emissive = "#000", emissive
   );
 };
 
+// ── Environment Props ──
+const Footpath = ({ position, args }) => (
+  <mesh position={position} receiveShadow>
+    <boxGeometry args={args} />
+    <meshStandardMaterial color="#999" roughness={0.9} />
+  </mesh>
+);
+
+const Building = ({ position, args, color = "#555" }) => (
+  <StaticBox position={position} args={args} color={color} />
+);
+
+const StreetLight = ({ position, rotation = [0, 0, 0] }) => (
+  <group position={position} rotation={rotation}>
+    <StaticBox position={[0, 3, 0]} args={[0.15, 6, 0.15]} color="#333" />
+    <mesh position={[0, 6, 1]} castShadow>
+      <boxGeometry args={[0.15, 0.15, 2]} />
+      <meshStandardMaterial color="#333" />
+    </mesh>
+    <mesh position={[0, 5.9, 1.8]}>
+      <boxGeometry args={[0.2, 0.1, 0.4]} />
+      <meshStandardMaterial color="#ffffee" emissive="#ffddaa" emissiveIntensity={2} />
+    </mesh>
+    <pointLight position={[0, 5.5, 1.8]} intensity={1.5} distance={20} color="#ffddaa" />
+  </group>
+);
+
 const TrackLesson1 = () => (
   <>
     {/* Ground */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-      <planeGeometry args={[120, 80]} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[40, 0, 0]} receiveShadow>
+      <planeGeometry args={[200, 100]} />
       <meshStandardMaterial color="#4a7c4e" roughness={1} />
     </mesh>
 
-    {/* Tarmac apron — starting area */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[10, 0.01, -3]} receiveShadow>
-      <planeGeometry args={[60, 14]} />
+    {/* Tarmac apron — much longer now */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[35, 0.01, -3]} receiveShadow>
+      <planeGeometry args={[110, 14]} />
       <meshStandardMaterial color="#2e2e2e" roughness={0.95} />
     </mesh>
+
+    {/* Footpaths */}
+    <Footpath position={[35, 0.1, 4.5]} args={[110, 0.2, 1.5]} />
+    <Footpath position={[35, 0.1, -10.5]} args={[110, 0.2, 1.5]} />
 
     {/* White start line */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-6, 0.02, -3]}>
@@ -33,56 +63,43 @@ const TrackLesson1 = () => (
     </mesh>
 
     {/* Dashed centre line */}
-    {[-2, 2, 6, 10, 14, 18, 22, 26, 30].map((x, i) => (
-      <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.02, -3]}>
-        <planeGeometry args={[1.5, 0.2]} />
+    {Array.from({ length: 15 }).map((_, i) => (
+      <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-2 + i * 6, 0.02, -3]}>
+        <planeGeometry args={[2.5, 0.2]} />
         <meshStandardMaterial color="#ffdd00" opacity={0.7} transparent />
       </mesh>
     ))}
 
-    {/* Boundary cones / curb left */}
-    {[-6, -2, 2, 6, 10, 14, 18, 22, 26, 30, 34].map((x, i) => (
-      <mesh key={`cl-${i}`} position={[x, 0.3, 3.8]} castShadow>
-        <coneGeometry args={[0.25, 0.6, 8]} />
-        <meshStandardMaterial color={i % 2 === 0 ? "#ff3300" : "#ffffff"} />
-      </mesh>
-    ))}
-    {/* Boundary cones right */}
-    {[-6, -2, 2, 6, 10, 14, 18, 22, 26, 30, 34].map((x, i) => (
-      <mesh key={`cr-${i}`} position={[x, 0.3, -9.8]} castShadow>
-        <coneGeometry args={[0.25, 0.6, 8]} />
-        <meshStandardMaterial color={i % 2 === 0 ? "#ff3300" : "#ffffff"} />
-      </mesh>
+    {/* Urban Buildings lining the street */}
+    {Array.from({ length: 8 }).map((_, i) => (
+      <group key={`bldg-${i}`}>
+        <Building position={[-10 + i * 14, 4, 10]} args={[10, 8 + Math.random() * 6, 8]} color={i % 2 === 0 ? "#7b6b63" : "#5d6d7e"} />
+        <Building position={[-10 + i * 14, 5, -16]} args={[10, 10 + Math.random() * 8, 8]} color={i % 3 === 0 ? "#8b5a45" : "#455a64"} />
+      </group>
     ))}
 
-    {/* Checkpoint gate posts */}
-    <StaticBox position={[34, 2, 4.5]}  args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
-    <StaticBox position={[34, 2, -10.5]} args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
-    {/* Gate crossbar (visual only) */}
-    <mesh position={[34, 4.2, -3]}>
+    {/* Streetlights */}
+    {Array.from({ length: 5 }).map((_, i) => (
+      <group key={`sl-${i}`}>
+        <StreetLight position={[0 + i * 20, 0, 3.5]} rotation={[0, Math.PI, 0]} />
+        <StreetLight position={[10 + i * 20, 0, -9.5]} rotation={[0, 0, 0]} />
+      </group>
+    ))}
+
+    {/* Checkpoint gate posts moved to x=80 */}
+    <StaticBox position={[80, 2, 4.5]} args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
+    <StaticBox position={[80, 2, -10.5]} args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
+    <mesh position={[80, 4.2, -3]}>
       <boxGeometry args={[0.3, 0.3, 15]} />
       <meshStandardMaterial color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
     </mesh>
 
-    {/* Scenery: instructor hut */}
-    <StaticBox position={[-12, 1.5, 10]} args={[4, 3, 4]} color="#c8a96e" />
-    <mesh position={[-12, 3.3, 10]} castShadow>
-      <coneGeometry args={[3.2, 1.5, 4]} />
-      <meshStandardMaterial color="#8b3a3a" />
-    </mesh>
-
-    {/* Background trees */}
-    {[[-20,12],[-15,14],[-8,14],[5,14],[15,14],[25,14],[35,14],[-20,-18],[-10,-18],[5,-18],[20,-18],[35,-18]].map(([x,z],i) => (
-      <group key={`t${i}`} position={[x, 0, z]}>
-        <mesh position={[0, 1.2, 0]} castShadow>
-          <cylinderGeometry args={[0.3, 0.4, 2.4]} />
-          <meshStandardMaterial color="#5c3d1e" />
-        </mesh>
-        <mesh position={[0, 3.5, 0]} castShadow>
-          <coneGeometry args={[1.8, 4, 7]} />
-          <meshStandardMaterial color="#2a5c1a" />
-        </mesh>
-      </group>
+    {/* Boundary cones / curb left */}
+    {Array.from({ length: 22 }).map((_, i) => (
+      <mesh key={`cl-${i}`} position={[-6 + i * 4, 0.3, 3.5]} castShadow>
+        <coneGeometry args={[0.25, 0.6, 8]} />
+        <meshStandardMaterial color={i % 2 === 0 ? "#ff3300" : "#ffffff"} />
+      </mesh>
     ))}
   </>
 );

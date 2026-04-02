@@ -2,16 +2,16 @@ import { useState } from "react";
 import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY } from "../gameConfig";
 
 const MenuScreen = ({
-  onStartLesson,   // (lessonId, difficulty) => void
-  onFreeDrive,     // (trackId, difficulty, timeOfDay) => void
-  completedLessons, // Set<string>
+  onStartLesson,
+  onFreeDrive,
+  completedLessons, // Object map: { "lesson1": 3, "lesson2": 1, ... }
   difficulty,
   onDifficultyChange,
 }) => {
-  const [tab,            setTab]            = useState("lessons"); // "lessons" | "freeDrive"
+  const [tab, setTab] = useState("lessons");
   const [selectedLesson, setSelectedLesson] = useState(null);
-  const [selectedTrack,  setSelectedTrack]  = useState("track1");
-  const [selectedTod,    setSelectedTod]    = useState("day");
+  const [selectedTrack, setSelectedTrack] = useState("track1");
+  const [selectedTod, setSelectedTod] = useState("day");
 
   const isUnlocked = (idx) => true;
 
@@ -21,14 +21,12 @@ const MenuScreen = ({
       <div className="menu-bg-glow" />
 
       <div className="menu-inner">
-        {/* Title */}
         <header className="menu-header">
           <p className="menu-eyebrow">● DRIVING SIMULATOR</p>
           <h1 className="menu-title">CAPY<span className="menu-title-accent">DRIVE</span></h1>
           <p className="menu-subtitle">Learn to drive — step by step</p>
         </header>
 
-        {/* Difficulty toggle */}
         <div className="diff-toggle">
           <span className="diff-label">Mode:</span>
           {["easy", "manual"].map((d) => (
@@ -42,19 +40,18 @@ const MenuScreen = ({
           ))}
         </div>
 
-        {/* Tab switcher */}
         <div className="menu-tabs">
-          <button className={`menu-tab ${tab === "lessons"   ? "menu-tab--active" : ""}`} onClick={() => setTab("lessons")}>📚 Lessons</button>
+          <button className={`menu-tab ${tab === "lessons" ? "menu-tab--active" : ""}`} onClick={() => setTab("lessons")}>📚 Lessons</button>
           <button className={`menu-tab ${tab === "freeDrive" ? "menu-tab--active" : ""}`} onClick={() => setTab("freeDrive")}>🏁 Free Drive</button>
         </div>
 
-        {/* ── Lessons tab ── */}
         {tab === "lessons" && (
           <>
             <div className="level-grid">
               {LESSONS.map((lesson, idx) => {
                 const unlocked = isUnlocked(idx);
-                const done = completedLessons.has(lesson.id);
+                const stars = completedLessons[lesson.id];
+                const done = stars !== undefined;
                 return (
                   <button
                     key={lesson.id}
@@ -68,7 +65,11 @@ const MenuScreen = ({
                       <h3 className="level-card-name">{lesson.title}</h3>
                       <p className="level-card-desc">{lesson.description}</p>
                     </div>
-                    {done     && <span className="done-badge">✓ Done</span>}
+                    {done && (
+                      <span className="done-badge" style={{ color: stars === 3 ? '#fbbf24' : '#22c55e', borderColor: stars === 3 ? '#fbbf24' : '#22c55e' }}>
+                        {"★".repeat(stars)}{"☆".repeat(3 - stars)}
+                      </span>
+                    )}
                     {!unlocked && <span className="lock-badge">Locked</span>}
                     <div className="level-card-check">✓</div>
                   </button>
@@ -86,10 +87,8 @@ const MenuScreen = ({
           </>
         )}
 
-        {/* ── Free Drive tab ── */}
         {tab === "freeDrive" && (
           <>
-            {/* Time of Day selector */}
             <div className="tod-row">
               <span className="tod-label">Time of Day:</span>
               <div className="tod-btns">
@@ -132,9 +131,8 @@ const MenuScreen = ({
           </>
         )}
 
-        {/* Controls */}
         <footer className="menu-controls">
-          {[["I","Ignition"],["W/S","Drive/Brake"],["E/Q","Gear ▲/▼"],["CTRL","Clutch"],["SPACE","Handbrake"],["H","Headlights"],["F","Horn"],["R","Reset"],["C","Camera"],["ESC","Menu"]].map(([k,l])=>(
+          {[["I", "Ignition"], ["W/S", "Drive/Brake"], ["E/Q", "Gear ▲/▼"], ["CTRL", "Clutch"], ["SPACE", "Handbrake"], ["H", "Headlights"], ["F", "Horn"], ["R", "Reset"], ["C", "Camera"], ["ESC", "Menu"]].map(([k, l]) => (
             <div key={k} className="ctrl-item">
               <kbd className="ctrl-key">{k}</kbd>
               <span className="ctrl-label">{l}</span>
