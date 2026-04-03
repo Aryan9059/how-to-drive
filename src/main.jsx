@@ -39,9 +39,10 @@ const App = () => {
     setLessonPhase("intro");
   }, []);
 
-  const startLesson = useCallback((lid, diff) => {
+  const startLesson = useCallback((lid, diff, tod = "day") => {
     setLessonId(lid);
     setDifficulty(diff);
+    setTimeOfDay(tod);
     setLessonPhase("intro");
     setCanvasKey((k) => k + 1);
     setGameMode("lesson");

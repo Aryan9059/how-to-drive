@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useCallback } from "react";
 import useWheels from "../hooks/useWheels";
 import useControls from "../hooks/useControls";
 import useEngine from "../hooks/useEngine";
-import { Quaternion, Vector3 } from "three";
+import { Quaternion, Vector3, Object3D } from "three";
 import { ENGINE_CONFIG, GEAR_RATIOS } from "../gameConfig";
 import simStore from "../simStore";
 
@@ -100,6 +100,15 @@ const Car = ({
   const currentForce = useRef(0);
   const cameraPos = useRef(new Vector3());
   const cameraTarget = useRef(new Vector3());
+  const lightL = useRef();
+  const lightR = useRef();
+  const targetL = useRef();
+  const targetR = useRef();
+
+  useEffect(() => {
+    if (lightL.current && targetL.current) lightL.current.target = targetL.current;
+    if (lightR.current && targetR.current) lightR.current.target = targetR.current;
+  }, []);
 
   useFrame((state, delta) => {
     const k = keys.current;
@@ -227,11 +236,11 @@ const Car = ({
       <group ref={chassisBody} name="chassisBody">
         <primitive object={CarBody} rotation-y={-Math.PI / 2} position={[0, -0.15, 0]} />
 
-        <spotLight position={[0.45, 0.15, 1.25]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
-        <spotLight position={[-0.45, 0.15, 1.25]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
+        <spotLight ref={lightR} position={[0.45, 0.15, 1.25]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
+        <spotLight ref={lightL} position={[-0.45, 0.15, 1.25]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
 
-        <mesh position={[0.45, 0.15, 1.32]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
-        <mesh position={[-0.45, 0.15, 1.32]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
+        <group ref={targetR} position={[0.45, 0.15, 5]} />
+        <group ref={targetL} position={[-0.45, 0.15, 5]} />
 
         <mesh position={[0.42, 0.1, -1.35]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>
         <mesh position={[-0.42, 0.1, -1.35]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>

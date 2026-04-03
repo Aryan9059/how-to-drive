@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY } from "../gameConfig";
-import { Lock, Play, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2 } from 'lucide-react';
+import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2 } from 'lucide-react';
 
 const MenuScreen = ({
   onStartLesson,
@@ -49,6 +49,22 @@ const MenuScreen = ({
           </button>
         </div>
 
+        <div className="tod-row">
+          <span className="tod-label">Environment:</span>
+          <div className="tod-btns">
+            {TIME_OF_DAY.map((t) => (
+              <button
+                key={t.id}
+                className={`tod-btn ${selectedTod === t.id ? "tod-btn--active" : ""}`}
+                onClick={() => setSelectedTod(t.id)}
+              >
+                <span className="tod-icon"><t.icon size={20} /></span>
+                <span className="tod-lbl">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {tab === "lessons" && (
           <div className="level-grid">
             {LESSONS.map((lesson, idx) => {
@@ -59,7 +75,7 @@ const MenuScreen = ({
                 <button
                   key={lesson.id}
                   className={`level-card ${!unlocked ? "level-card--locked" : ""}`}
-                  onClick={() => unlocked && onStartLesson(lesson.id, difficulty)}
+                  onClick={() => unlocked && onStartLesson(lesson.id, difficulty, selectedTod)}
                   disabled={!unlocked}
                 >
                   <div className="level-card-num">{String(idx + 1).padStart(2, "0")}</div>
@@ -82,40 +98,22 @@ const MenuScreen = ({
         )}
 
         {tab === "freeDrive" && (
-          <>
-            <div className="tod-row">
-              <span className="tod-label">Time of Day:</span>
-              <div className="tod-btns">
-                {TIME_OF_DAY.map((t) => (
-                  <button
-                    key={t.id}
-                    className={`tod-btn ${selectedTod === t.id ? "tod-btn--active" : ""}`}
-                    onClick={() => setSelectedTod(t.id)}
-                  >
-                    <span className="tod-icon"><t.icon size={20} /></span>
-                    <span className="tod-lbl">{t.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="level-grid">
-              {FREE_DRIVE_TRACKS.map((t) => (
-                <button
-                  key={t.id}
-                  className="level-card"
-                  onClick={() => onFreeDrive(t.id, difficulty, selectedTod)}
-                >
-                  <div className="level-card-icon"><t.icon size={36} /></div>
-                  <div className="level-card-info">
-                    <h3 className="level-card-name">{t.name}</h3>
-                    <p className="level-card-desc">{t.desc || ""}</p>
-                  </div>
-                  <div className="level-card-check"><CheckCircle2 size={16} /></div>
-                </button>
-              ))}
-            </div>
-          </>
+          <div className="level-grid">
+            {FREE_DRIVE_TRACKS.map((t) => (
+              <button
+                key={t.id}
+                className="level-card"
+                onClick={() => onFreeDrive(t.id, difficulty, selectedTod)}
+              >
+                <div className="level-card-icon"><t.icon size={36} /></div>
+                <div className="level-card-info">
+                  <h3 className="level-card-name">{t.name}</h3>
+                  <p className="level-card-desc">{t.desc || ""}</p>
+                </div>
+                <div className="level-card-check"><CheckCircle2 size={16} /></div>
+              </button>
+            ))}
+          </div>
         )}
 
         <footer className="menu-controls">

@@ -72,6 +72,18 @@ const SimHUD = ({ lessonId, mode }) => {
     return () => clearInterval(id);
   }, []);
 
+  const [lightAlert, setLightAlert] = useState({ show: false, mode: "OFF" });
+  const [prevLights, setPrevLights] = useState(tel.headlightsOn);
+
+  useEffect(() => {
+    if (tel.headlightsOn !== prevLights) {
+      setPrevLights(tel.headlightsOn);
+      setLightAlert({ show: true, mode: tel.headlightsOn ? "ON" : "OFF" });
+      const id = setTimeout(() => setLightAlert((s) => ({ ...s, show: false })), 2000);
+      return () => clearTimeout(id);
+    }
+  }, [tel.headlightsOn, prevLights]);
+
   const lesson   = lessonId ? LESSONS.find((l) => l.id === lessonId) : null;
   const gearName = GEAR_NAMES[tel.gear] ?? "N";
   const touch    = isTouchDevice();
@@ -79,6 +91,12 @@ const SimHUD = ({ lessonId, mode }) => {
   return (
     <>
       <div className="simhud-root">
+        {lightAlert.show && (
+          <div className="simhud-toast">
+            {lightAlert.mode === "ON" ? "💡 HEADLIGHTS ON" : "🔦 HEADLIGHTS OFF"}
+          </div>
+        )}
+        
         <div className="simhud-badge">
           {mode === "lesson" && lesson ? (
             <>
@@ -97,13 +115,6 @@ const SimHUD = ({ lessonId, mode }) => {
         )}
 
         <div className="simhud-topright">
-          <div
-            className={`simhud-headlight ${tel.headlightsOn ? "simhud-headlight--on" : ""}`}
-            title="H = Headlights"
-          >
-            {tel.headlightsOn ? "💡" : "🔦"}
-            <span className="simhud-headlight-lbl">{tel.headlightsOn ? "LIGHTS ON" : "LIGHTS OFF"}</span>
-          </div>
           {!touch && (
             <div className="simhud-esc">
               <kbd className="hud-key">ESC</kbd> Menu

@@ -5,6 +5,7 @@ import Car from "./Car";
 import Ground from "./Ground";
 import Track from "./Track";
 import BarrelContent from "./Barrel";
+import DynamicSky from "./DynamicSky";
 import LessonMonitor from "./LessonMonitor";
 import { LESSON_CAR_STARTS, TRACK_CAR_STARTS } from "../gameConfig";
 
@@ -41,48 +42,15 @@ const Scene = ({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const tod = mode === "freeDrive" ? timeOfDay : "day";
-
-  const todLighting = () => {
+  const tod = timeOfDay;
+  
+  const todFog = () => {
     switch (tod) {
-      case "dawn": return (
-        <>
-          <color attach="background" args={["#f08040"]} />
-          <fog   attach="fog"        args={["#e07030", 60, 220]} />
-          <ambientLight intensity={0.5} color="#ffbb88" />
-          <directionalLight position={[-30, 8, -10]}  intensity={1.8} color="#ff9955" castShadow />
-          <directionalLight position={[10, 20, 10]}   intensity={0.4} color="#ffddaa" />
-        </>
-      );
-      case "day": return (
-        <>
-          <color attach="background" args={["#6dcef5"]} />
-          <fog   attach="fog"        args={["#6dcef5", 80, 280]} />
-          <ambientLight intensity={0.7} color="#ffffff" />
-          <directionalLight position={[20, 40, 10]}   intensity={2.5} color="#fffdf0" castShadow />
-          <directionalLight position={[-10, 10, -10]} intensity={0.5} color="#c8e8ff" />
-        </>
-      );
-      case "dusk": return (
-        <>
-          <color attach="background" args={["#1a0a30"]} />
-          <fog   attach="fog"        args={["#1a0a30", 50, 180]} />
-          <ambientLight intensity={0.25} color="#8833aa" />
-          <directionalLight position={[25, 5, -5]}    intensity={1.6} color="#ff6622" castShadow />
-          <directionalLight position={[-10, 15, 10]}  intensity={0.3} color="#aa44ff" />
-          <pointLight position={[0, 25, 0]} intensity={8} color="#7722cc" distance={120} />
-        </>
-      );
-      case "night": return (
-        <>
-          <color attach="background" args={["#010208"]} />
-          <fog   attach="fog"        args={["#010208", 30, 120]} />
-          <ambientLight intensity={0.08} color="#2233aa" />
-          <pointLight position={[0, 40, 0]}   intensity={2}  color="#334466" distance={150} />
-          <pointLight position={[0, 10, -20]} intensity={1}  color="#112244" distance={60} />
-        </>
-      );
-      default: return null;
+      case "dawn":  return <fog attach="fog" args={["#f08040", 60, 400]} />;
+      case "day":   return <fog attach="fog" args={["#6dcef5", 100, 800]} />;
+      case "dusk":  return <fog attach="fog" args={["#1a0a30", 50, 400]} />;
+      case "night": return <fog attach="fog" args={["#010208", 20, 200]} />;
+      default:      return null;
     }
   };
 
@@ -141,10 +109,14 @@ const Scene = ({
 
   const content = (
     <Suspense fallback={null}>
-      {useTrackOverride ? nightOverride : todLighting()}
+      {!useTrackOverride && <DynamicSky timeOfDay={tod} />}
+      {!useTrackOverride && todFog()}
+      
+      {useTrackOverride ? nightOverride : null}
       {trackLighting()}
-      {!["track3","track5", "track_city"].includes(activeTrack) && tod !== "night" && (
-        <Environment files="textures/envmap.hdr" background={tod === "day"} />
+      
+      {!["track3","track5", "track_city"].includes(activeTrack) && (
+        <Environment files="textures/envmap.hdr" background={false} />
       )}
 
       <PerspectiveCamera makeDefault position={cameraPos} fov={40} />
