@@ -50,7 +50,7 @@ const LessonMonitor = ({ lessonId, onPass, onFail }) => {
           position={[150, 1, -3]}
           radius={5}
           requireStop={true}
-          requiredSpeed={0.5}
+          requiredSpeed={1}
           onTrigger={callPass}
         />
       </>
