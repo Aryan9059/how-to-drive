@@ -119,15 +119,33 @@ const Car = ({
 
     if (eng === "on") {
       const { idleRpm, maxRpm, rpmRiseRate, rpmFallRate, stallRpm } = ENGINE_CONFIG;
-      const effectiveThrottle = throttle && !clutch;
+      const speed = simStore.speed;
+      const ratio = Math.abs(GEAR_RATIOS[g]) || 1; // absolute for reverse
+      
+      let targetRpm = simStore.rpm;
+      
+      if (g !== 0 && !clutch) {
+        // Tied to wheel speed: RPM = Speed * Factor / GearRatio
+        // Higher gear (higher ratio in this config) = more speed per RPM
+        // Adjusted factor to reach ~7500 RPM at 120km/h in 5th gear
+        const speedRpm = speed * (250 / ratio);
+        targetRpm = Math.max(idleRpm, speedRpm);
+        
+        // If throttle is pressed, we can exceed the speed-locked RPM slightly (simulating torque)
+        if (throttle) targetRpm += 400; 
+        
+        // Rapidly lerp to the gear-synced RPM
+        simStore.rpm += (targetRpm - simStore.rpm) * Math.min(1, delta * 12);
+      } else {
+        // Neutral or Clutch: Purely throttle response
+        if (throttle) {
+          simStore.rpm = Math.min(maxRpm, simStore.rpm + rpmRiseRate * delta);
+        } else {
+          simStore.rpm = Math.max(idleRpm, simStore.rpm - rpmFallRate * delta);
+        }
+      }
 
-      let rpm = simStore.rpm;
-      rpm = effectiveThrottle
-        ? Math.min(maxRpm, rpm + rpmRiseRate * delta)
-        : Math.max(idleRpm, rpm - ((g !== 0 && !clutch) ? rpmFallRate * 1.3 : rpmFallRate) * delta);
-      simStore.rpm = rpm;
-
-      if (difficulty === "manual" && g > 0 && !clutch && rpm <= stallRpm) stallEngine();
+      if (difficulty === "manual" && g > 0 && !clutch && simStore.rpm <= stallRpm && speed < 5) stallEngine();
     } else {
       simStore.rpm = 0;
     }

@@ -120,7 +120,7 @@ const Scene = ({
     return null;
   };
 
-  const useTrackOverride = ["track3", "track5"].includes(activeTrack);
+  const useTrackOverride = ["track3", "track5", "track_city"].includes(activeTrack);
   const nightOverride = activeTrack === "track3" ? (
     <>
       <color attach="background" args={["#04060f"]} />
@@ -131,13 +131,19 @@ const Scene = ({
       <color attach="background" args={["#100300"]} />
       <fog   attach="fog"        args={["#100300", 35, 120]} />
     </>
+  ) : activeTrack === "track_city" ? (
+    <>
+      <color attach="background" args={["#87ceeb"]} />
+      <fog   attach="fog"        args={["#87ceeb", 200, 2500]} />
+      <Environment files="textures/envmap.hdr" background={tod === "day"} />
+    </>
   ) : null;
 
   const content = (
     <Suspense fallback={null}>
       {useTrackOverride ? nightOverride : todLighting()}
       {trackLighting()}
-      {!["track3","track5"].includes(activeTrack) && tod !== "night" && (
+      {!["track3","track5", "track_city"].includes(activeTrack) && tod !== "night" && (
         <Environment files="textures/envmap.hdr" background={tod === "day"} />
       )}
 

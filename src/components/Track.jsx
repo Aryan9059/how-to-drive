@@ -1,3 +1,12 @@
+import Track1 from "./Track1";
+import HighwayTrack from "./HighwayTrack";
+import TrackLesson1 from "./TrackLesson1";
+import TrackLesson2 from "./TrackLesson2";
+import TrackLesson3 from "./TrackLesson3";
+import TrackLesson4 from "./TrackLesson4";
+import TrackLesson5 from "./TrackLesson5";
+import TrackLesson7 from "./TrackLesson7";
+import TrackLesson8 from "./TrackLesson8";
 import TrackLesson9 from "./TrackLesson9";
 
 const Track = ({ levelId = "lesson1" }) => {
@@ -11,10 +20,6 @@ const Track = ({ levelId = "lesson1" }) => {
     case "lesson7": return <TrackLesson7 />;
     case "lesson8": return <TrackLesson8 />;
     case "lesson9": return <TrackLesson9 />;
-    case "track2": return <Track2 />;
-    case "track3": return <Track3 />;
-    case "track4": return <Track4 />;
-    case "track5": return <Track5 />;
     default:        return <Track1 />;
   }
 };

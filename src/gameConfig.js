@@ -12,8 +12,8 @@ export const GEAR_RATIOS = {
 
 export const ENGINE_CONFIG = {
   idleRpm: 800,
-  maxRpm: 15000,
-  redlineRpm: 12000,
+  maxRpm: 8000,
+  redlineRpm: 7200,
   shiftUpRpm: 5500,
   shiftDownRpm: 1800,
   stallRpm: 700,
@@ -110,10 +110,6 @@ export const LESSONS = [
 
 export const FREE_DRIVE_TRACKS = [
   { id: "track1", name: "Forest Track", icon: Trees, desc: "Winding woodland roads with ramps" },
-  { id: "track2", name: "Desert Speedway", icon: Sun, desc: "High-speed oval on scorching sand" },
-  { id: "track3", name: "Night City Circuit", icon: Building2, desc: "Neon-lit tight urban chicane course" },
-  { id: "track4", name: "Snow Tundra Run", icon: Snowflake, desc: "Icy mountain pass through frozen terrain" },
-  { id: "track5", name: "Volcanic Blaze", icon: Flame, desc: "Dark basalt roads over a glowing lava gorge" },
 ];
 
 
@@ -140,8 +136,4 @@ export const LESSON_CAR_START = LESSON_CAR_STARTS.lesson1;
 
 export const TRACK_CAR_STARTS = {
   track1: { position: [-10, 3, -3], rotation: [0, Math.PI / 2, 0] },
-  track2: { position: [-24, 2, 0], rotation: [0, Math.PI / 2, 0] },
-  track3: { position: [-18, 2, 0], rotation: [0, Math.PI / 2, 0] },
-  track4: { position: [-22, 2, 0], rotation: [0, Math.PI / 2, 0] },
-  track5: { position: [-20, 2, 0], rotation: [0, Math.PI / 2, 0] },
 };
