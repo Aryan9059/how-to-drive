@@ -109,7 +109,7 @@ export const LESSONS = [
 ];
 
 export const FREE_DRIVE_TRACKS = [
-  { id: "track1", name: "Forest Track", icon: Trees, desc: "Winding woodland roads with ramps" },
+  { id: "track1", name: "Stunt Track", icon: Trees, desc: "Winding woodland roads with ramps" },
 ];
 
 

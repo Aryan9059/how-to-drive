@@ -34,7 +34,7 @@ const MenuScreen = ({
               onClick={() => onDifficultyChange(d)}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {d === "easy" ? <><CircleDashed size={14}/> Easy (auto-clutch)</> : <><CircleDot size={14}/> Manual (clutch)</>}
+                {d === "easy" ? <><CircleDashed size={14} /> Easy (auto-clutch)</> : <><CircleDot size={14} /> Manual (clutch)</>}
               </div>
             </button>
           ))}
@@ -42,10 +42,10 @@ const MenuScreen = ({
 
         <div className="menu-tabs">
           <button className={`menu-tab ${tab === "lessons" ? "menu-tab--active" : ""}`} onClick={() => setTab("lessons")}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><BookOpen size={16}/> Lessons</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><BookOpen size={16} /> Missions</div>
           </button>
           <button className={`menu-tab ${tab === "freeDrive" ? "menu-tab--active" : ""}`} onClick={() => setTab("freeDrive")}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Flag size={16}/> Free Drive</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Flag size={16} /> Free Drive</div>
           </button>
         </div>
 

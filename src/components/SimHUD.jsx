@@ -104,7 +104,7 @@ const SimHUD = ({ lessonId, mode }) => {
               <span className="simhud-name">{lesson.title}</span>
             </>
           ) : (
-            <span className="simhud-name">Free Drive</span>
+            <span className="simhud-name">Stunt Track</span>
           )}
         </div>
 
