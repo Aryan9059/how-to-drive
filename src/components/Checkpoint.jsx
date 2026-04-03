@@ -1,19 +1,16 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 
-// Glowing ring checkpoint. Turns green when car is inside AND condition is met.
 const Checkpoint = ({ position, radius = 3, label = "", onTrigger, requireStop = false, requiredSpeed = 1.0 }) => {
   const ringRef = useRef();
   const triggered = useRef(false);
 
   useFrame(({ clock }) => {
     if (!ringRef.current) return;
-    // Idle spin animation
     ringRef.current.rotation.y = clock.getElapsedTime() * 0.6;
 
-    // Distance check
     const [cx, cy, cz] = position;
-    const [px, , pz] = window._simPos || [0, 0, 0]; // updated by LessonMonitor
+    const [px, , pz] = window._simPos || [0, 0, 0];
     const speed = window._simSpeed || 0;
     
     const dist = Math.sqrt((px - cx) ** 2 + (pz - cz) ** 2);
@@ -43,7 +40,6 @@ const Checkpoint = ({ position, radius = 3, label = "", onTrigger, requireStop =
           opacity={0.9}
         />
       </mesh>
-      {/* Vertical guide poles */}
       {[[-radius, 0, 0], [radius, 0, 0]].map(([x, y, z], i) => (
         <mesh key={i} position={[x, 2, z]}>
           <cylinderGeometry args={[0.08, 0.08, 4, 8]} />

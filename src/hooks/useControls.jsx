@@ -1,13 +1,12 @@
 import { useEffect, useRef } from "react";
 import simStore from "../simStore";
 
-// Tracks keyboard + touch state. Physics application is in Car.jsx useFrame.
 const useControls = ({ toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk }) => {
   const keys = useRef({});
 
   useEffect(() => {
     const onDown = (e) => {
-      if (keys.current[e.code]) return; // prevent key-repeat fires for one-shots
+      if (keys.current[e.code]) return;
       keys.current[e.code] = true;
       if (e.code === "KeyI") toggleIgnition();
       if (e.code === "KeyE") shiftUp();
@@ -25,7 +24,6 @@ const useControls = ({ toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hor
     };
   }, [toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk]);
 
-  // Return a proxy that merges keyboard + touch virtual keys
   const merged = new Proxy(keys, {
     get(target, prop) {
       if (prop === "current") {

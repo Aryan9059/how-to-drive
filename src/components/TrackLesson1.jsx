@@ -11,7 +11,6 @@ const StaticBox = ({ position, args, color = "#888", emissive = "#000", emissive
   );
 };
 
-// ── Environment Props ──
 const Footpath = ({ position, args }) => (
   <mesh position={position} receiveShadow>
     <boxGeometry args={args} />
@@ -40,29 +39,24 @@ const StreetLight = ({ position, rotation = [0, 0, 0] }) => (
 
 const TrackLesson1 = () => (
   <>
-    {/* Ground */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[40, 0, 0]} receiveShadow>
       <planeGeometry args={[200, 100]} />
       <meshStandardMaterial color="#4a7c4e" roughness={1} />
     </mesh>
 
-    {/* Tarmac apron — much longer now */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[35, 0.01, -3]} receiveShadow>
       <planeGeometry args={[110, 14]} />
       <meshStandardMaterial color="#2e2e2e" roughness={0.95} />
     </mesh>
 
-    {/* Footpaths */}
     <Footpath position={[35, 0.1, 4.5]} args={[110, 0.2, 1.5]} />
     <Footpath position={[35, 0.1, -10.5]} args={[110, 0.2, 1.5]} />
 
-    {/* White start line */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-6, 0.02, -3]}>
       <planeGeometry args={[0.4, 14]} />
       <meshStandardMaterial color="#ffffff" />
     </mesh>
 
-    {/* Dashed centre line */}
     {Array.from({ length: 15 }).map((_, i) => (
       <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-2 + i * 6, 0.02, -3]}>
         <planeGeometry args={[2.5, 0.2]} />
@@ -70,7 +64,6 @@ const TrackLesson1 = () => (
       </mesh>
     ))}
 
-    {/* Urban Buildings lining the street */}
     {Array.from({ length: 8 }).map((_, i) => (
       <group key={`bldg-${i}`}>
         <Building position={[-10 + i * 14, 4, 10]} args={[10, 8 + Math.random() * 6, 8]} color={i % 2 === 0 ? "#7b6b63" : "#5d6d7e"} />
@@ -78,7 +71,6 @@ const TrackLesson1 = () => (
       </group>
     ))}
 
-    {/* Streetlights */}
     {Array.from({ length: 5 }).map((_, i) => (
       <group key={`sl-${i}`}>
         <StreetLight position={[0 + i * 20, 0, 3.5]} rotation={[0, Math.PI, 0]} />
@@ -86,7 +78,6 @@ const TrackLesson1 = () => (
       </group>
     ))}
 
-    {/* Checkpoint gate posts moved to x=80 */}
     <StaticBox position={[80, 2, 4.5]} args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
     <StaticBox position={[80, 2, -10.5]} args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
     <mesh position={[80, 4.2, -3]}>
@@ -94,7 +85,6 @@ const TrackLesson1 = () => (
       <meshStandardMaterial color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
     </mesh>
 
-    {/* Boundary cones / curb left */}
     {Array.from({ length: 22 }).map((_, i) => (
       <mesh key={`cl-${i}`} position={[-6 + i * 4, 0.3, 3.5]} castShadow>
         <coneGeometry args={[0.25, 0.6, 8]} />

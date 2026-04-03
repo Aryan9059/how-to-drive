@@ -43,7 +43,6 @@ const Car = ({
       linearDamping: 0.25,
       angularDamping: 0.6,
       onCollide: (e) => {
-        // Detect lateral impacts > 2 velocity (hitting walls/cones)
         if (Math.abs(e.contact.ni[1]) < 0.5 && Math.abs(e.contact.impactVelocity) > 2) {
           simStore.metrics.mistakes += 1;
         }
@@ -118,7 +117,6 @@ const Car = ({
     const eng = engineStateRef.current;
     const g = gearRef.current;
 
-    // ── RPM simulation ─────────────────────────────────────────────────────
     if (eng === "on") {
       const { idleRpm, maxRpm, rpmRiseRate, rpmFallRate, stallRpm } = ENGINE_CONFIG;
       const effectiveThrottle = throttle && !clutch;
@@ -134,7 +132,6 @@ const Car = ({
       simStore.rpm = 0;
     }
 
-    // ── Engine force with smoothing ────────────────────────────────────────
     const canDrive = eng === "on";
     const clutchFactor = clutch ? 0 : 1;
     const ratio = GEAR_RATIOS[g] ?? 0;
@@ -152,7 +149,6 @@ const Car = ({
     vehicleApi.applyEngineForce(-currentForce.current, 2);
     vehicleApi.applyEngineForce(-currentForce.current, 3);
 
-    // ── Braking ────────────────────────────────────────────────────────────
     const brakeForce = brake ? ENGINE_CONFIG.maxBrakeForce : 0;
     for (let i = 0; i < 4; i++) vehicleApi.setBrake(brakeForce, i);
     if (handbrake) {
@@ -162,7 +158,6 @@ const Car = ({
       vehicleApi.setBrake(80, 3);
     }
 
-    // ── Smooth steering via lerp ───────────────────────────────────────────
     const speed = simStore.speed;
     const maxSteer = Math.max(0.2, 0.55 - speed * 0.004);
     const targetSteer = steerLeft ? maxSteer : steerRight ? -maxSteer : 0;
@@ -175,7 +170,6 @@ const Car = ({
     vehicleApi.setSteeringValue(-s * 0.15, 2);
     vehicleApi.setSteeringValue(-s * 0.15, 3);
 
-    // ── Reset ──────────────────────────────────────────────────────────────
     if (k.KeyR) {
       chassisApi.position.set(...startPosition);
       chassisApi.velocity.set(0, 0, 0);
@@ -185,12 +179,10 @@ const Car = ({
       currentForce.current = 0;
     }
 
-    // ── Speed telemetry & Star Tracker ─────────────────────────────────────
     const [vx, vy, vz] = velocity.current;
     const currentSpeed = Math.sqrt(vx * vx + vy * vy + vz * vz) * 3.6;
     simStore.speed = currentSpeed;
 
-    // Detect hard braking (speed drop > 40 km/h per second)
     const decel = (simStore.metrics.lastSpeed - currentSpeed) / delta;
     if (decel > 40 && !simStore.metrics.isHardBraking) {
       simStore.metrics.hardBrakes += 1;
@@ -200,7 +192,6 @@ const Car = ({
     }
     simStore.metrics.lastSpeed = currentSpeed;
 
-    // ── Camera ─────────────────────────────────────────────────────────────
     if (cameraView == 0) return;
 
     const worldPos = new Vector3();
@@ -236,15 +227,12 @@ const Car = ({
       <group ref={chassisBody} name="chassisBody">
         <primitive object={CarBody} rotation-y={-Math.PI / 2} position={[0, -0.15, 0]} />
 
-        {/* ── Headlight spotlights ── */}
         <spotLight position={[0.45, 0.15, 1.35]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
         <spotLight position={[-0.45, 0.15, 1.35]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
 
-        {/* Headlight lens glows */}
         <mesh position={[0.45, 0.15, 1.42]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
         <mesh position={[-0.45, 0.15, 1.42]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
 
-        {/* Tail light glows */}
         <mesh position={[0.42, 0.1, -1.42]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>
         <mesh position={[-0.42, 0.1, -1.42]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>
       </group>

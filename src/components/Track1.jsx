@@ -1,4 +1,3 @@
-// Original GLB-based forest track (was Track.jsx)
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { useLoader } from "@react-three/fiber";
 import ColliderBox from "./ColliderBox";
@@ -10,7 +9,6 @@ const Track1 = () => {
   return (
     <>
       <primitive object={result} />
-      {/* Trees: */}
       <ColliderBox position={[-2.8, 0, 9.55]} rotation={[0, Math.PI / 4, 0]} />
       <ColliderBox position={[-4.15, 0, 11.9]} rotation={[0, Math.PI / 3, 0]} />
       <ColliderBox position={[-5.75, 0, 9.85]} rotation={[0, Math.PI / 4, 0]} />
@@ -25,7 +23,6 @@ const Track1 = () => {
       <ColliderBox position={[-16.48, 0, 16.62]} rotation={[0, Math.PI / 4, 0]} />
       <ColliderBox position={[-15.65, 0, -8.4]} rotation={[0, Math.PI / 4, 0]} />
       <ColliderBox position={[-24.47, 0, -12.27]} rotation={[0, Math.PI / 4, 0]} />
-      {/* Arches: */}
       <ColliderBox position={[-0.35, 0, -5.05]} scale={[0.5, 6, 0.7]} />
       <ColliderBox position={[-0.35, 0, -0.7]} scale={[0.5, 6, 0.7]} />
       <ColliderBox position={[-0.35, 2.4, -2.875]} scale={[0.5, 0.7, 5]} />
@@ -37,9 +34,7 @@ const Track1 = () => {
       <ColliderBox position={[-5.09, 0, -5.05]} scale={[0.5, 6, 0.7]} />
       <ColliderBox position={[-5.09, 0, -0.7]} scale={[0.5, 6, 0.7]} />
       <ColliderBox position={[-5.09, 2.4, -2.875]} scale={[0.5, 0.7, 5]} />
-      {/* Scene: */}
       <ColliderBox position={[2.6, 0, -12.85]} scale={[7.9, 8.5, 5.9]} />
-      {/* Huts: */}
       <ColliderBox position={[-7.25, 0, -6.095]} scale={[0.18, 4, 0.18]} />
       <ColliderBox position={[-7.25, 0, -7.825]} scale={[0.18, 4, 0.18]} />
       <ColliderBox position={[-8.98, 0, -6.095]} scale={[0.18, 4, 0.18]} />
@@ -51,7 +46,6 @@ const Track1 = () => {
       <ColliderBox position={[-12.36, 0, -6.095]} scale={[0.18, 4, 0.18]} />
       <ColliderBox position={[-12.36, 0, -7.825]} scale={[0.18, 4, 0.18]} />
       <ColliderBox position={[-11.495, 2, -6.96]} scale={[2.3, 0.9, 2.3]} />
-      {/* Signs: */}
       <ColliderBox position={[-10.33, 0, -0.275]} scale={[2, 1.7, 0.17]} />
       <ColliderBox position={[-21.36, 0, 1.2]} scale={[0.25, 2.6, 0.8]} />
       <ColliderBox position={[-20.33, 0, -2.83]} scale={[0.25, 2.6, 0.8]} rotation={[0, -Math.PI / 6, 0]} />

@@ -39,7 +39,6 @@ const LessonMonitor = ({ lessonId, onPass, onFail }) => {
   });
 
   if (lessonId === "lesson1") {
-    // 🚦 Moved from x=34 to x=80
     return <Checkpoint position={[80, 1, -3]} radius={4} onTrigger={callPass} />;
   }
 
@@ -47,7 +46,6 @@ const LessonMonitor = ({ lessonId, onPass, onFail }) => {
     return (
       <>
         <Checkpoint position={[0, 1, -3]} radius={4} />
-        {/* 🚦 Moved from x=72 to x=150 */}
         <Checkpoint
           position={[150, 1, -3]}
           radius={5}
@@ -62,7 +60,6 @@ const LessonMonitor = ({ lessonId, onPass, onFail }) => {
   if (lessonId === "lesson3") {
     return (
       <>
-        {/* 🚦 Spaced out significantly for a longer run */}
         <GearGate
           position={[60, 1, -3]}
           requiredGear={2}
@@ -86,7 +83,6 @@ const LessonMonitor = ({ lessonId, onPass, onFail }) => {
   }
 
   if (lessonId === "lesson4") {
-    // 🚦 Moved from x=84 to x=219
     return (
       <StopLine
         position={[219, 0, -3]}

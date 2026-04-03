@@ -3,7 +3,6 @@ const dump = (p) => {
   try { 
     const buf = fs.readFileSync(p); 
     const chunkLen = buf.readUInt32LE(12); 
-    // Strip trailing nulls and spaces from JSON chunk (GLTF padding)
     const str = buf.toString('utf8', 20, 20+chunkLen).replace(/[\0\s]+$/g, ''); 
     const json = JSON.parse(str);
     const names = json.nodes.map(n => n.name);

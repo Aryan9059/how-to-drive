@@ -1,4 +1,3 @@
-// src/components/Scene.jsx
 import { Environment, OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Debug, usePlane } from "@react-three/cannon";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -12,11 +11,11 @@ import { LESSON_CAR_STARTS, TRACK_CAR_STARTS } from "../gameConfig";
 const debug = false;
 
 const Scene = ({
-  mode       = "lesson",   // "lesson" | "freeDrive"
+  mode       = "lesson",
   lessonId   = "lesson1",
   trackId    = "track1",
   difficulty = "easy",
-  timeOfDay  = "day",      // "dawn" | "day" | "dusk" | "night"
+  timeOfDay  = "day",
   onLessonPass,
   onLessonFail,
 }) => {
@@ -42,7 +41,6 @@ const Scene = ({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // ── Time-of-day lighting system ─────────────────────────────────────────────
   const tod = mode === "freeDrive" ? timeOfDay : "day";
 
   const todLighting = () => {
@@ -88,7 +86,6 @@ const Scene = ({
     }
   };
 
-  // ── Per-track extra lighting (overlaid on top of time-of-day) ────────────────
   const trackLighting = () => {
     if (activeTrack === "track2") return (
       <>
@@ -123,7 +120,6 @@ const Scene = ({
     return null;
   };
 
-  // For track3 (Night City) use a fixed dark preset regardless of tod
   const useTrackOverride = ["track3", "track5"].includes(activeTrack);
   const nightOverride = activeTrack === "track3" ? (
     <>
@@ -139,11 +135,8 @@ const Scene = ({
 
   const content = (
     <Suspense fallback={null}>
-      {/* Background + fog + base lights */}
       {useTrackOverride ? nightOverride : todLighting()}
-      {/* Per-track accent lights */}
       {trackLighting()}
-      {/* HDR environment for reflections (no background on night/dusk tracks) */}
       {!["track3","track5"].includes(activeTrack) && tod !== "night" && (
         <Environment files="textures/envmap.hdr" background={tod === "day"} />
       )}

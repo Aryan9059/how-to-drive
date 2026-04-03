@@ -3,11 +3,10 @@ import simStore from "../simStore";
 import { GEAR_NAMES, ENGINE_CONFIG, LESSONS } from "../gameConfig";
 import TouchControls from "./TouchControls";
 
-// SVG circular arc gauge
 const Gauge = ({ value, max, color, label, unit, redline }) => {
   const r = 48;
   const circ = 2 * Math.PI * r;
-  const arc  = 0.75; // 270° sweep
+  const arc  = 0.75;
   const pct  = Math.max(0, Math.min(1, value / max));
   const filled = pct * circ * arc;
   const isRed  = redline && value >= redline;
@@ -15,14 +14,12 @@ const Gauge = ({ value, max, color, label, unit, redline }) => {
   return (
     <div className="gauge-wrap">
       <svg viewBox="0 0 110 110" width="120" height="120">
-        {/* Track */}
         <circle
           cx="55" cy="55" r={r}
           fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="9"
           strokeDasharray={`${circ * arc} ${circ}`} strokeLinecap="round"
           transform="rotate(135 55 55)"
         />
-        {/* Value */}
         <circle
           cx="55" cy="55" r={r}
           fill="none"
@@ -64,7 +61,6 @@ const EngineLight = ({ state }) => {
   );
 };
 
-// Detect touchscreen
 const isTouchDevice = () =>
   typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
@@ -83,7 +79,6 @@ const SimHUD = ({ lessonId, mode }) => {
   return (
     <>
       <div className="simhud-root">
-        {/* ── Top-left: level badge ── */}
         <div className="simhud-badge">
           {mode === "lesson" && lesson ? (
             <>
@@ -95,14 +90,12 @@ const SimHUD = ({ lessonId, mode }) => {
           )}
         </div>
 
-        {/* ── Top-center: objective ── */}
         {lesson && (
           <div className="simhud-objective">
             🎯 {lesson.objective}
           </div>
         )}
 
-        {/* ── Top-right: headlight + ESC ── */}
         <div className="simhud-topright">
           <div
             className={`simhud-headlight ${tel.headlightsOn ? "simhud-headlight--on" : ""}`}
@@ -118,7 +111,6 @@ const SimHUD = ({ lessonId, mode }) => {
           )}
         </div>
 
-        {/* ── Bottom panel: gauges (hide on mobile — touch overlay has gear display) ── */}
         {!touch && (
           <div className="simhud-panel">
             <Gauge
@@ -147,7 +139,6 @@ const SimHUD = ({ lessonId, mode }) => {
           </div>
         )}
 
-        {/* ── Bottom-left: key reference (desktop only) ── */}
         {!touch && (
           <div className="simhud-keys">
             <div className="key-row"><kbd className="hud-key">I</kbd><span>Ignition</span></div>
@@ -162,7 +153,6 @@ const SimHUD = ({ lessonId, mode }) => {
         )}
       </div>
 
-      {/* ── Touch UI overlay (mobile only) ── */}
       {touch && (
         <TouchControls gear={tel.gear} headlightsOn={tel.headlightsOn} />
       )}

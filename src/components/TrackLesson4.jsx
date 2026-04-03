@@ -1,4 +1,3 @@
-// Lesson 4: Emergency Braking — long straight with clear braking zone and red stop wall
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
 
@@ -14,25 +13,21 @@ const StaticBox = ({ position, args, color = "#888", emissive = "#000", emissive
 
 const TrackLesson4 = () => (
   <>
-    {/* Ground */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[30, 0, 0]} receiveShadow>
       <planeGeometry args={[180, 70]} />
       <meshStandardMaterial color="#556b44" roughness={1} />
     </mesh>
 
-    {/* Main road */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[30, 0.01, -3]} receiveShadow>
       <planeGeometry args={[180, 12]} />
       <meshStandardMaterial color="#282828" roughness={0.9} />
     </mesh>
 
-    {/* Speed-up zone (clean tarmac, first 50 units) */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[15, 0.015, -3]}>
       <planeGeometry args={[50, 12]} />
       <meshStandardMaterial color="#323232" roughness={0.85} />
     </mesh>
 
-    {/* 50 km/h marker boards — two sets */}
     {[-5, 5, 15, 25, 35].map((x,i) => (
       <group key={`sp-${i}`} position={[x, 0, 4.5]}>
         <StaticBox position={[0, 1.2, 0]} args={[0.12, 2.4, 0.12]} color="#666" />
@@ -43,7 +38,6 @@ const TrackLesson4 = () => (
       </group>
     ))}
 
-    {/* Centre dashes */}
     {Array.from({ length: 25 }).map((_, i) => (
       <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-50 + i * 6, 0.02, -3]}>
         <planeGeometry args={[3, 0.2]} />
@@ -51,7 +45,6 @@ const TrackLesson4 = () => (
       </mesh>
     ))}
 
-    {/* Braking zone — bold yellow/black chevrons starting at x=55 */}
     {Array.from({ length: 16 }).map((_, i) => (
       <mesh key={`bz-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[55 + i * 1.4, 0.025, -3]}>
         <planeGeometry args={[1.2, 12]} />
@@ -59,7 +52,6 @@ const TrackLesson4 = () => (
       </mesh>
     ))}
 
-    {/* Distance markers T-3, T-2, T-1 */}
     {[[55,"3"],[65,"2"],[75,"1"]].map(([x, label], i) => (
       <group key={`dm-${i}`} position={[x, 0, -10.5]}>
         <StaticBox position={[0, 1, 0]} args={[0.12, 2, 0.12]} color="#888" />
@@ -70,16 +62,13 @@ const TrackLesson4 = () => (
       </group>
     ))}
 
-    {/* Red STOP wall */}
     <StaticBox position={[85, 2, -3]} args={[0.8, 4, 14]} color="#cc1111" emissive="#ff0000" emissiveIntensity={0.5} />
 
-    {/* Red stop line on ground */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[84, 0.03, -3]}>
       <planeGeometry args={[0.6, 12]} />
       <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.3} />
     </mesh>
 
-    {/* Side barriers — armco style */}
     {Array.from({ length: 16 }).map((_, i) => (
       <group key={`ar-${i}`}>
         <StaticBox position={[-50 + i*9, 0.55, 4.2]}  args={[8.5, 0.3, 0.2]} color="#c0c0c0" />
@@ -87,7 +76,6 @@ const TrackLesson4 = () => (
       </group>
     ))}
 
-    {/* Trees */}
     {Array.from({ length: 16 }).map((_, i) => (
       <group key={`tr-${i}`}>
         <group position={[-48 + i * 11, 0, 9]}>

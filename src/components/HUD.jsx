@@ -7,7 +7,6 @@ const HUD = ({ levelId, onBack }) => {
 
   return (
     <div className="hud-root">
-      {/* Top-left: level info */}
       <div className="hud-level-badge">
         <span className="hud-lv-num">LV {LEVEL_NUMS[levelId]}</span>
         <span className="hud-lv-name">{level.name}</span>
@@ -16,13 +15,11 @@ const HUD = ({ levelId, onBack }) => {
         </span>
       </div>
 
-      {/* Top-right: ESC hint */}
       <div className="hud-esc-hint">
         <kbd className="hud-key">ESC</kbd>
         <span>Back to Menu</span>
       </div>
 
-      {/* Bottom-left: controls */}
       <div className="hud-controls">
         <div className="hud-ctrl-row">
           <kbd className="hud-key">W</kbd>

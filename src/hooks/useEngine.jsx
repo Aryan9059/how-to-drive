@@ -7,7 +7,6 @@ const useEngine = (difficulty = "easy") => {
   const crankTimer = useRef(null);
   const mounted = useRef(true);
 
-  // Sync discrete state → simStore so SimHUD can poll
   useEffect(() => { simStore.engineState = engineState; }, [engineState]);
   useEffect(() => { simStore.gear = gear; }, [gear]);
 
@@ -16,7 +15,6 @@ const useEngine = (difficulty = "easy") => {
     clearTimeout(crankTimer.current);
   }, []);
 
-  // ── Ignition ──────────────────────────────────────────────────────────────
   const toggleIgnition = useCallback(() => {
     const state = simStore.engineState;
     if (state === "off" || state === "stalled") {
@@ -35,8 +33,6 @@ const useEngine = (difficulty = "easy") => {
     }
   }, []);
 
-  // ── Gear shifts ───────────────────────────────────────────────────────────
-  // Manual: clutch must be pressed. Easy: shift freely.
   const shiftUp = useCallback(() => {
     if (difficulty === "manual" && !simStore.clutchPressed) return;
     setGear((g) => Math.min(5, g + 1));
@@ -47,7 +43,6 @@ const useEngine = (difficulty = "easy") => {
     setGear((g) => Math.max(-1, g - 1));
   }, [difficulty]);
 
-  // ── Stall (called from Car's useFrame) ───────────────────────────────────
   const stallEngine = useCallback(() => {
     clearTimeout(crankTimer.current);
     setEngineState("stalled");

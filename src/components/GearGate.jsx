@@ -4,7 +4,6 @@ import { Text } from "@react-three/drei";
 import { GEAR_NAMES } from "../gameConfig";
 import simStore from "../simStore";
 
-// A gate that checks the car is in the required gear when passing through.
 const GearGate = ({ position, requiredGear, radius = 3.5, onPass, onFail }) => {
   const ringRef = useRef();
   const triggered = useRef(false);
@@ -38,7 +37,6 @@ const GearGate = ({ position, requiredGear, radius = 3.5, onPass, onFail }) => {
         <torusGeometry args={[radius, 0.18, 16, 64]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.0} transparent opacity={0.85} />
       </mesh>
-      {/* Gear label board */}
       <mesh position={[0, 4.5, 0]}>
         <boxGeometry args={[3, 1.2, 0.1]} />
         <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.5} />

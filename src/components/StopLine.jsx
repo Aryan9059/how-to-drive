@@ -2,13 +2,12 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import simStore from "../simStore";
 
-// A stop-line on the ground with a warning zone. onStop fires when car is in zone AND stopped.
 const StopLine = ({
-  position,        // [x,y,z] center of the line
+  position,
   width = 10,
-  zoneDepth = 6,   // depth of the stopping zone in front of line
-  onStop,          // called once when car stops in zone
-  requiredSpeed = 0.8,  // km/h threshold for "stopped"
+  zoneDepth = 6,
+  onStop,
+  requiredSpeed = 0.8,
 }) => {
   const triggered = useRef(false);
   const landRef = useRef();
@@ -33,12 +32,10 @@ const StopLine = ({
 
   return (
     <group position={position}>
-      {/* Red stop line */}
       <mesh position={[0, 0.02, 0]}>
         <boxGeometry args={[width, 0.04, 0.4]} />
         <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.8} />
       </mesh>
-      {/* Yellow warning zone */}
       <mesh ref={landRef} position={[0, 0.01, zoneDepth / 2]}>
         <boxGeometry args={[width, 0.04, zoneDepth]} />
         <meshStandardMaterial color="#fbbf24" transparent opacity={0.35} />

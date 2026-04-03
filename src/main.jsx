@@ -10,11 +10,9 @@ import LessonOverlay from "./components/LessonOverlay";
 import { LESSONS } from "./gameConfig";
 import simStore from "./simStore";
 
-// Load completed lessons from localStorage (maps ID -> stars)
 const loadCompleted = () => {
   try {
     const data = JSON.parse(localStorage.getItem("completedLessons") || "{}");
-    // Migrate old array format to object format
     if (Array.isArray(data)) {
       return data.reduce((acc, id) => ({ ...acc, [id]: 1 }), {});
     }
@@ -69,7 +67,6 @@ const App = () => {
     else goMenu();
   }, [lessonId, difficulty, startLesson, goMenu]);
 
-  // Track run time metrics
   useEffect(() => {
     if (lessonPhase === "active") {
       simStore.metrics = {

@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY } from "../gameConfig";
+import { Lock, Play, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2 } from 'lucide-react';
 
 const MenuScreen = ({
   onStartLesson,
   onFreeDrive,
-  completedLessons, // Object map: { "lesson1": 3, "lesson2": 1, ... }
+  completedLessons,
   difficulty,
   onDifficultyChange,
 }) => {
   const [tab, setTab] = useState("lessons");
-  const [selectedLesson, setSelectedLesson] = useState(null);
-  const [selectedTrack, setSelectedTrack] = useState("track1");
   const [selectedTod, setSelectedTod] = useState("day");
 
   const isUnlocked = (idx) => true;
@@ -22,9 +21,8 @@ const MenuScreen = ({
 
       <div className="menu-inner">
         <header className="menu-header">
-          <p className="menu-eyebrow">● DRIVING SIMULATOR</p>
-          <h1 className="menu-title">CAPY<span className="menu-title-accent">DRIVE</span></h1>
-          <p className="menu-subtitle">Learn to drive — step by step</p>
+          <h1 className="menu-title">HowTo<span className="menu-title-accent">Drive</span></h1>
+          <p className="menu-subtitle">Learn to drive with the power of Computer Graphics</p>
         </header>
 
         <div className="diff-toggle">
@@ -35,56 +33,52 @@ const MenuScreen = ({
               className={`diff-btn ${difficulty === d ? "diff-btn--active" : ""}`}
               onClick={() => onDifficultyChange(d)}
             >
-              {d === "easy" ? "🟢 Easy (auto-clutch)" : "🔴 Manual (clutch)"}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {d === "easy" ? <><CircleDashed size={14}/> Easy (auto-clutch)</> : <><CircleDot size={14}/> Manual (clutch)</>}
+              </div>
             </button>
           ))}
         </div>
 
         <div className="menu-tabs">
-          <button className={`menu-tab ${tab === "lessons" ? "menu-tab--active" : ""}`} onClick={() => setTab("lessons")}>📚 Lessons</button>
-          <button className={`menu-tab ${tab === "freeDrive" ? "menu-tab--active" : ""}`} onClick={() => setTab("freeDrive")}>🏁 Free Drive</button>
+          <button className={`menu-tab ${tab === "lessons" ? "menu-tab--active" : ""}`} onClick={() => setTab("lessons")}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><BookOpen size={16}/> Lessons</div>
+          </button>
+          <button className={`menu-tab ${tab === "freeDrive" ? "menu-tab--active" : ""}`} onClick={() => setTab("freeDrive")}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Flag size={16}/> Free Drive</div>
+          </button>
         </div>
 
         {tab === "lessons" && (
-          <>
-            <div className="level-grid">
-              {LESSONS.map((lesson, idx) => {
-                const unlocked = isUnlocked(idx);
-                const stars = completedLessons[lesson.id];
-                const done = stars !== undefined;
-                return (
-                  <button
-                    key={lesson.id}
-                    className={`level-card ${selectedLesson === lesson.id ? "level-card--active" : ""} ${!unlocked ? "level-card--locked" : ""}`}
-                    onClick={() => unlocked && setSelectedLesson(lesson.id)}
-                    disabled={!unlocked}
-                  >
-                    <div className="level-card-num">{String(idx + 1).padStart(2, "0")}</div>
-                    <div className="level-card-icon">{unlocked ? lesson.icon : "🔒"}</div>
-                    <div className="level-card-info">
-                      <h3 className="level-card-name">{lesson.title}</h3>
-                      <p className="level-card-desc">{lesson.description}</p>
-                    </div>
-                    {done && (
-                      <span className="done-badge" style={{ color: stars === 3 ? '#fbbf24' : '#22c55e', borderColor: stars === 3 ? '#fbbf24' : '#22c55e' }}>
-                        {"★".repeat(stars)}{"☆".repeat(3 - stars)}
-                      </span>
-                    )}
-                    {!unlocked && <span className="lock-badge">Locked</span>}
-                    <div className="level-card-check">✓</div>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              className={`play-btn ${!selectedLesson ? "play-btn--disabled" : ""}`}
-              disabled={!selectedLesson}
-              onClick={() => selectedLesson && onStartLesson(selectedLesson, difficulty)}
-            >
-              <span className="play-btn-text">START LESSON</span>
-              <span className="play-btn-arrow">▶</span>
-            </button>
-          </>
+          <div className="level-grid">
+            {LESSONS.map((lesson, idx) => {
+              const unlocked = isUnlocked(idx);
+              const stars = completedLessons[lesson.id];
+              const done = stars !== undefined;
+              return (
+                <button
+                  key={lesson.id}
+                  className={`level-card ${!unlocked ? "level-card--locked" : ""}`}
+                  onClick={() => unlocked && onStartLesson(lesson.id, difficulty)}
+                  disabled={!unlocked}
+                >
+                  <div className="level-card-num">{String(idx + 1).padStart(2, "0")}</div>
+                  <div className="level-card-icon">{unlocked ? <lesson.icon size={32} /> : <Lock size={32} opacity={0.5} />}</div>
+                  <div className="level-card-info">
+                    <h3 className="level-card-name">{lesson.title}</h3>
+                    <p className="level-card-desc">{lesson.description}</p>
+                  </div>
+                  {done && (
+                    <span className="done-badge">
+                      {"★".repeat(stars)}{"☆".repeat(3 - stars)}
+                    </span>
+                  )}
+                  {!unlocked && <span className="lock-badge">Locked</span>}
+                  <div className="level-card-check"><CheckCircle2 size={16} /></div>
+                </button>
+              );
+            })}
+          </div>
         )}
 
         {tab === "freeDrive" && (
@@ -98,7 +92,7 @@ const MenuScreen = ({
                     className={`tod-btn ${selectedTod === t.id ? "tod-btn--active" : ""}`}
                     onClick={() => setSelectedTod(t.id)}
                   >
-                    <span className="tod-icon">{t.icon}</span>
+                    <span className="tod-icon"><t.icon size={20} /></span>
                     <span className="tod-lbl">{t.label}</span>
                   </button>
                 ))}
@@ -109,25 +103,18 @@ const MenuScreen = ({
               {FREE_DRIVE_TRACKS.map((t) => (
                 <button
                   key={t.id}
-                  className={`level-card ${selectedTrack === t.id ? "level-card--active" : ""}`}
-                  onClick={() => setSelectedTrack(t.id)}
+                  className="level-card"
+                  onClick={() => onFreeDrive(t.id, difficulty, selectedTod)}
                 >
-                  <div className="level-card-icon" style={{ fontSize: "2.5rem" }}>{t.icon}</div>
+                  <div className="level-card-icon"><t.icon size={36} /></div>
                   <div className="level-card-info">
                     <h3 className="level-card-name">{t.name}</h3>
                     <p className="level-card-desc">{t.desc || ""}</p>
                   </div>
-                  <div className="level-card-check">✓</div>
+                  <div className="level-card-check"><CheckCircle2 size={16} /></div>
                 </button>
               ))}
             </div>
-            <button
-              className="play-btn"
-              onClick={() => onFreeDrive(selectedTrack, difficulty, selectedTod)}
-            >
-              <span className="play-btn-text">FREE DRIVE</span>
-              <span className="play-btn-arrow">▶</span>
-            </button>
           </>
         )}
 

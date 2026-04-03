@@ -1,9 +1,6 @@
-// TouchControls.jsx — Full mobile dashboard overlay
-// Writes into simStore.touch which Car.jsx reads alongside keyboard input.
 import { useEffect, useRef, useState, useCallback } from "react";
 import simStore from "../simStore";
 
-// ── Steering Wheel ──────────────────────────────────────────────────────────
 const SteeringWheel = () => {
   const [rotation, setRotation] = useState(0);
   const touchRef = useRef(null);
@@ -31,7 +28,6 @@ const SteeringWheel = () => {
   const onTouchEnd = () => {
     startXRef.current = null;
     lastRotRef.current = 0;
-    // Spring back
     setRotation(0);
     simStore.touch.KeyA = false;
     simStore.touch.KeyD = false;
@@ -49,16 +45,12 @@ const SteeringWheel = () => {
         width="120" height="120" viewBox="0 0 120 120"
         style={{ transform: `rotate(${rotation}deg)`, transition: rotation === 0 ? "transform 0.3s ease" : "none" }}
       >
-        {/* Outer ring */}
         <circle cx="60" cy="60" r="55" fill="none" stroke="#ffffff30" strokeWidth="10" />
         <circle cx="60" cy="60" r="55" fill="none" stroke="#ffffff88" strokeWidth="3" />
-        {/* Spokes */}
         <line x1="60" y1="5"  x2="60" y2="40"  stroke="#ffffff99" strokeWidth="6" strokeLinecap="round" />
         <line x1="10" y1="85" x2="40" y2="70"  stroke="#ffffff99" strokeWidth="6" strokeLinecap="round" />
         <line x1="110" y1="85" x2="80" y2="70" stroke="#ffffff99" strokeWidth="6" strokeLinecap="round" />
-        {/* Center hub */}
         <circle cx="60" cy="60" r="14" fill="#ffffff22" stroke="#ffffff66" strokeWidth="2" />
-        {/* Horn indicator at top */}
         <circle cx="60" cy="20" r="5" fill="#ffffffcc" />
       </svg>
       <div className="tc-wheel-label">STEER</div>
@@ -66,7 +58,6 @@ const SteeringWheel = () => {
   );
 };
 
-// ── Pedal button ────────────────────────────────────────────────────────────
 const Pedal = ({ label, icon, keyCode, color, activeColor }) => {
   const [pressed, setPressed] = useState(false);
 
@@ -95,7 +86,6 @@ const Pedal = ({ label, icon, keyCode, color, activeColor }) => {
   );
 };
 
-// ── One-shot tap button ─────────────────────────────────────────────────────
 const TapButton = ({ label, icon, keyCode, color, pulse }) => {
   const [active, setActive] = useState(false);
 
@@ -124,7 +114,6 @@ const TapButton = ({ label, icon, keyCode, color, pulse }) => {
   );
 };
 
-// ── Gear Shifter ──────────────────────────────────────────────────────────
 const GearShifter = ({ gear }) => {
   const [upPressed, setUpPressed] = useState(false);
   const [downPressed, setDownPressed] = useState(false);
@@ -163,9 +152,7 @@ const GearShifter = ({ gear }) => {
   );
 };
 
-// ── Main component ──────────────────────────────────────────────────────────
 const TouchControls = ({ gear = 0, headlightsOn = false }) => {
-  // Only render on touch-capable devices
   if (typeof window !== "undefined" && !("ontouchstart" in window) && !navigator.maxTouchPoints) {
     return null;
   }
@@ -173,11 +160,9 @@ const TouchControls = ({ gear = 0, headlightsOn = false }) => {
   return (
     <div className="tc-root">
 
-      {/* ── Left side: Steering wheel ── */}
       <div className="tc-left">
         <SteeringWheel />
 
-        {/* Handbrake */}
         <button
           className="tc-handbrake"
           onTouchStart={(e) => { e.preventDefault(); simStore.touch.Space = true; }}
@@ -189,14 +174,12 @@ const TouchControls = ({ gear = 0, headlightsOn = false }) => {
         </button>
       </div>
 
-      {/* ── Center: Info buttons ── */}
       <div className="tc-center">
         <TapButton label="ENGINE" icon="🔑" keyCode="KeyI" color="#22c55e" />
         <TapButton label="LIGHTS"  icon={headlightsOn ? "💡" : "🔦"} keyCode="KeyH" color="#f59e0b" />
         <TapButton label="HORN"    icon="📯" keyCode="KeyF" color="#3b82f6" pulse />
       </div>
 
-      {/* ── Right side: Pedals + Gear ── */}
       <div className="tc-right">
         <GearShifter gear={gear} />
 

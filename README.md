@@ -1,82 +1,78 @@
-# R3F Car Racing
+# HowToDrive
 
-**A 3D web mini-game about driving a car.** Implemented using **react-three-fiber** and **cannon.js** technologies, the game aims to demonstrate **how impressive and varied the user experience with the browser can be.**
+**HowToDrive** is a premium 3D driving simulator built for the web. It offers a realistic yet accessible experience for learning vehicle controls, featuring both manual and automatic transmission modes across a variety of challenging environments.
 
-By driving a car around a small race track, manipulating objects and performing flips, the project is designed to not only be fun, but also show how flexible and powerful creating interactive content on the web can be.
+## 🚀 Key Features
 
-![Game screenshot](public/screenshots/Screen2.jpg)
+### 🕹️ Advanced Simulation
+- **Manual Mode**: Realistic manual transmission with dedicated clutch control and gear shifting logic.
+*   **Easy Mode**: Automatic clutch management for a smoother driving experience.
+*   **Engine Physics**: Detailed engine simulation including stalling, RPM management, and gear-based torque.
 
-## Project Structure and Technologies Used
+### 📚 Structured Learning
+9 progressive lessons designed to master the fundamentals of driving:
+- **Lesson 1**: Basic Steering & Navigation
+- **Lesson 2**: Controlled Braking
+- **Lesson 3**: Gear Shifting (Manual)
+- **Lesson 4**: Emergency Braking
+- **Lesson 5**: Precision Parking
+- **Lesson 6**: Highway Speed Management
+- **Lesson 7**: Roundabout Navigation
+- **Lesson 8**: Hill Starts & Incline Control
+- **Lesson 9**: Slalom & Agility
 
-The project uses the following key libraries and tools:
+### 🌍 Immersive Environments
+5 unique tracks for free-roaming and skill refinement:
+- 🌲 **Forest Circuit**: Lush greenery and winding paths.
+- 🏜️ **Desert Run**: Wide open spaces with high-speed dunes.
+- 🏙️ **Night City**: Neon-soaked urban streets.
+- ❄️ **Snow Tundra**: Low-friction icy plains and snow drifts.
+- 🌋 **Volcanic Blaze**: Extreme terrain with flowing lava and basalt walls.
 
-- **React-three-fiber (R3F)** - is a library for React designed to create 3D scenes using the three.js library. (Integration between Three.js and React)
-- **Cannon.js** - is a physics engine for JavaScript designed to simulate the physics of objects. (For example, collisions and dynamic movements).
-- **Blender** - is a powerful and free 3D modeling tool. It provides a wide range of tools for creating 3D objects and scenes.
+### 💎 Premium Interface
+- **Modern UI**: A sleek Red and Yellow themed interface utilizing advanced **Glassmorphism** (translucent blurring).
+- **Dynamic HUD**: Real-time telemetry including Speedometer, RPM Gauge, Gear Indicator, and Pedals.
+- **Direct Interaction**: "Click-to-Launch" menu system—simply click a level or track to start immediately.
+- **Responsive Controls**: Full support for Keyboard and Mobile Touch overlays.
 
-```plaintext
-R3F-CAR-RACING
-├── public
-│   ├── models/         // .glb objects
-│   ├── textures/       // textures (not used directly)
-│   └── screenshots/    // previews
-├── src
-│   ├── assets
-│   │   └── global.css
-│   │
-│   ├── components      // r3f objects
-│   │   ├── Scene.jsx   // main scene
-│   │   ├── Track.jsx   // scene collisions
-│   │   ├── Car.jsx     // car body (wheels, chassis, apply controls)
-│   │   └── ...         // other scene elements
-│   │
-│   ├── hooks
-│   │   ├── useWheels.jsx       // 4 wheel chassis
-│   │   └── useControls.jsx     // using chassisApi and vehicleApi
-│   │
-│   └── main.jsx        // entrypoint
-│
-├── .gitignore
-├── index.html
-└── README.md  // <- u are here :^
-```
+## 🛠️ Technologies Used
+- **React**: Core application framework.
+- **React-Three-Fiber (R3F)**: 3D scene management and rendering.
+- **Cannon.js**: Real-world physics and collision detection.
+- **Lucide-React**: Standardized vector iconography.
+- **Vanilla CSS**: Custom glassmorphism design system.
 
-## Get Started
+## 🏁 Getting Started
 
-Try the game right in your browser! [(click me)](https://DanieloM83.github.io/R3F-Car-Racing)
+Follow these steps to set up the project on your local machine:
 
-Ready to explore the code behind the scenes? Follow these simple steps to set up the project on your local machine:
-
+### 1. Clone the repository
 ```bash
-git clone https://github.com/DanieloM83/R3F-Car-Racing.git
-
-cd R3F-Car-Racing
-
-npm install -g yarn  # npm comes bundled with Node.js
-
-yarn  # download all dependencies (may take some time)
-
-yarn dev  # start the project
+git clone https://github.com/aryan9059/how-to-drive.git
+cd how-to-drive
 ```
 
-This will launch the project on your local machine, and you can access it by navigating to (usually) http://localhost:5173 in your web browser.
+### 2. Install dependencies
+```bash
+npm install
+```
 
-## Screentshots
+### 3. Start the development server
+```bash
+npm run dev
+```
 
-<div align="center">
-    <img src="public/screenshots/Screen1.jpg" width="49%" alt="screen1" />
-    <img src="public/screenshots/Screen2.jpg" width="49%" alt="screen2" />
-    <img src="public/screenshots/Screen3.jpg" width="32%" alt="screen3" />
-    <img src="public/screenshots/Screen4.jpg" width="32%" alt="screen4" />
-    <img src="public/screenshots/Screen5.jpg" width="32%" alt="screen5" />
-</div>
+Browse to `http://localhost:5173` to start driving!
 
-## Acknowledgement
-
-I'd like to thank the community of creators and teachers on YouTube whose ideas, code snippets, and detailed video tutorials were very helpful in developing this mini-project. The wealth of knowledge these people shared not only inspired my journey, but also enriched the development process.
-
-- [**Low Poly Vehicles | Easy Beginner | Blender Tutorial**](https://www.youtube.com/watch?v=Zkg7Ol2jEjs)
-- [**Make A Low Poly Barrel - Beginner Tutorial**](https://www.youtube.com/watch?v=0jWLjAaIEMg)
-- [**The Best Volumetric Fog Shader (Blender Tutorial)**](https://www.youtube.com/watch?v=2SiCtnXVVFw)
-- [**Car physics mini game with React Three Fiber and Three.js**](https://www.youtube.com/watch?v=wHw3Gh0IhNc)
-- [**Texture Baking Blender Tutorials**](https://www.youtube.com/playlist?list=PLsGl9GczcgBvJPh7D_ITafvmTW7ZzQTEr)
+## ⌨️ Controls
+- **[I]**: Ignition Toggle
+- **[W / S]**: Accelerate / Brake
+- **[A / D]**: Steering
+- **[E / Q]**: Shift Up / Down
+- **[CTRL]**: Clutch
+- **[SPACE]**: Handbrake
+- **[H]**: Headlights
+- **[F]**: Horn
+- **[R]**: Reset Car
+- **[C]**: Toggle Camera
+- **[ESC]**: Exit to Menu

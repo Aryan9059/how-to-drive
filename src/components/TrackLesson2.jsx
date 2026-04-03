@@ -34,23 +34,19 @@ const StopSign = ({ position, rotation = [0, 0, 0] }) => (
 
 const TrackLesson2 = () => (
   <>
-    {/* Grassy ground */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[60, 0, 0]} receiveShadow>
       <planeGeometry args={[260, 100]} />
       <meshStandardMaterial color="#4a7040" roughness={1} />
     </mesh>
 
-    {/* Road surface — extended to 200 units */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[65, 0.01, -3]} receiveShadow>
       <planeGeometry args={[210, 10]} />
       <meshStandardMaterial color="#2c2c2c" roughness={0.9} />
     </mesh>
 
-    {/* Footpaths */}
     <Footpath position={[65, 0.1, 2.75]} args={[210, 0.2, 1.5]} />
     <Footpath position={[65, 0.1, -8.75]} args={[210, 0.2, 1.5]} />
 
-    {/* Centre dashes */}
     {Array.from({ length: 35 }).map((_, i) => (
       <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-25 + i * 6, 0.02, -3]}>
         <planeGeometry args={[3, 0.2]} />
@@ -58,7 +54,6 @@ const TrackLesson2 = () => (
       </mesh>
     ))}
 
-    {/* Stop line — bold red/white zebra at x=150 */}
     {[0, 1, 2, 3, 4].map((i) => (
       <mesh key={`sl-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[150, 0.03, -0.5 + i * -1.5]}>
         <planeGeometry args={[0.6, 1.4]} />
@@ -66,11 +61,9 @@ const TrackLesson2 = () => (
       </mesh>
     ))}
 
-    {/* Stop signs */}
     <StopSign position={[150, 0, 3.5]} rotation={[0, -Math.PI / 2, 0]} />
     <StopSign position={[150, 0, -9.5]} rotation={[0, -Math.PI / 2, 0]} />
 
-    {/* Braking zone indicator — yellow rumble strips */}
     {[136, 138, 140, 142, 144, 146, 148].map((x, i) => (
       <mesh key={`rz-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.025, -3]}>
         <planeGeometry args={[0.5, 10]} />
@@ -78,10 +71,8 @@ const TrackLesson2 = () => (
       </mesh>
     ))}
 
-    {/* Wall blocker at end */}
     <StaticBox position={[165, 2, -3]} args={[1, 4, 12]} color="#555" />
 
-    {/* Trees flanking road for depth */}
     {Array.from({ length: 22 }).map((_, i) => (
       <group key={`tr-${i}`}>
         <group position={[-28 + i * 9, 0, 7]}>
