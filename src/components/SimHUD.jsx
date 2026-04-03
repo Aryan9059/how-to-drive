@@ -114,12 +114,12 @@ const SimHUD = ({ lessonId, mode }) => {
         {!touch && (
           <div className="simhud-panel">
             <Gauge
-              value={tel.rpm}
-              max={ENGINE_CONFIG.maxRpm}
+              value={tel.rpm / 20}
+              max={ENGINE_CONFIG.maxRpm / 20}
               color="#6366f1"
               label="RPM"
-              unit="×1000"
-              redline={ENGINE_CONFIG.redlineRpm}
+              unit=""
+              redline={ENGINE_CONFIG.redlineRpm / 20}
             />
 
             <div className="gear-display">

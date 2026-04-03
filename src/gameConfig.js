@@ -18,7 +18,7 @@ export const ENGINE_CONFIG = {
   shiftDownRpm: 1800,
   stallRpm: 700,
   maxEngineForce: 300,
-  maxBrakeForce: 80,
+  maxBrakeForce: 40,
   rpmRiseRate: 4500,
   rpmFallRate: 2800,
 };

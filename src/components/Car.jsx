@@ -119,33 +119,15 @@ const Car = ({
 
     if (eng === "on") {
       const { idleRpm, maxRpm, rpmRiseRate, rpmFallRate, stallRpm } = ENGINE_CONFIG;
-      const speed = simStore.speed;
-      const ratio = Math.abs(GEAR_RATIOS[g]) || 1; // absolute for reverse
-      
-      let targetRpm = simStore.rpm;
-      
-      if (g !== 0 && !clutch) {
-        // Tied to wheel speed: RPM = Speed * Factor / GearRatio
-        // Higher gear (higher ratio in this config) = more speed per RPM
-        // Adjusted factor to reach ~7500 RPM at 120km/h in 5th gear
-        const speedRpm = speed * (250 / ratio);
-        targetRpm = Math.max(idleRpm, speedRpm);
-        
-        // If throttle is pressed, we can exceed the speed-locked RPM slightly (simulating torque)
-        if (throttle) targetRpm += 400; 
-        
-        // Rapidly lerp to the gear-synced RPM
-        simStore.rpm += (targetRpm - simStore.rpm) * Math.min(1, delta * 12);
-      } else {
-        // Neutral or Clutch: Purely throttle response
-        if (throttle) {
-          simStore.rpm = Math.min(maxRpm, simStore.rpm + rpmRiseRate * delta);
-        } else {
-          simStore.rpm = Math.max(idleRpm, simStore.rpm - rpmFallRate * delta);
-        }
-      }
+      const effectiveThrottle = throttle && !clutch;
 
-      if (difficulty === "manual" && g > 0 && !clutch && simStore.rpm <= stallRpm && speed < 5) stallEngine();
+      let rpm = simStore.rpm;
+      rpm = effectiveThrottle
+        ? Math.min(maxRpm, rpm + rpmRiseRate * delta)
+        : Math.max(idleRpm, rpm - ((g !== 0 && !clutch) ? rpmFallRate * 1.3 : rpmFallRate) * delta);
+      simStore.rpm = rpm;
+
+      if (difficulty === "manual" && g > 0 && !clutch && rpm <= stallRpm) stallEngine();
     } else {
       simStore.rpm = 0;
     }
@@ -245,14 +227,14 @@ const Car = ({
       <group ref={chassisBody} name="chassisBody">
         <primitive object={CarBody} rotation-y={-Math.PI / 2} position={[0, -0.15, 0]} />
 
-        <spotLight position={[0.45, 0.15, 1.35]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
-        <spotLight position={[-0.45, 0.15, 1.35]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
+        <spotLight position={[0.45, 0.15, 1.25]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
+        <spotLight position={[-0.45, 0.15, 1.25]} angle={0.35} penumbra={0.3} intensity={simStore.headlightsOn ? 60 : 0} color="#fff8e7" distance={28} castShadow={false} />
 
-        <mesh position={[0.45, 0.15, 1.42]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
-        <mesh position={[-0.45, 0.15, 1.42]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
+        <mesh position={[0.45, 0.15, 1.32]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
+        <mesh position={[-0.45, 0.15, 1.32]}><sphereGeometry args={[0.09, 8, 8]} /><meshStandardMaterial color="#ffffee" emissive="#ffffcc" emissiveIntensity={simStore.headlightsOn ? 5 : 0} /></mesh>
 
-        <mesh position={[0.42, 0.1, -1.42]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>
-        <mesh position={[-0.42, 0.1, -1.42]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>
+        <mesh position={[0.42, 0.1, -1.35]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>
+        <mesh position={[-0.42, 0.1, -1.35]}><sphereGeometry args={[0.07, 8, 8]} /><meshStandardMaterial color="#ff1100" emissive="#ff0000" emissiveIntensity={simStore.headlightsOn ? 4 : 0.6} /></mesh>
       </group>
 
       <group ref={wheels[0]} name="WheelRF"><primitive object={WheelRF} rotation-y={-Math.PI / 2} position={[0, 0, 0]} /></group>
