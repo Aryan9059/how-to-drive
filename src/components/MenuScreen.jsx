@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY } from "../gameConfig";
-import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2 } from 'lucide-react';
+import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass } from 'lucide-react';
 
 const MenuScreen = ({
   onStartLesson,
@@ -42,10 +42,10 @@ const MenuScreen = ({
 
         <div className="menu-tabs">
           <button className={`menu-tab ${tab === "lessons" ? "menu-tab--active" : ""}`} onClick={() => setTab("lessons")}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><BookOpen size={16} /> Missions</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Trophy size={16} /> Missions</div>
           </button>
           <button className={`menu-tab ${tab === "freeDrive" ? "menu-tab--active" : ""}`} onClick={() => setTab("freeDrive")}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Flag size={16} /> Free Drive</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Compass size={16} /> Free Drive</div>
           </button>
         </div>
 

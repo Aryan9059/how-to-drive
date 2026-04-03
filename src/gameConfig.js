@@ -23,7 +23,7 @@ export const ENGINE_CONFIG = {
   rpmFallRate: 2800,
 };
 
-import { Key, TrafficCone, Settings, OctagonAlert, SquareParking, Map, RotateCcw, Mountain, Flag, Trees, Sun, Building2, Snowflake, Flame, Sunrise, Sunset, Moon } from 'lucide-react';
+import { Key, TrafficCone, Settings, OctagonAlert, SquareParking, Map, RotateCcw, Mountain, Flag, Trees, Sun, Building2, Snowflake, Flame, Sunrise, Sunset, Moon, Compass, Trophy } from 'lucide-react';
 
 export const LESSONS = [
   {
@@ -109,7 +109,7 @@ export const LESSONS = [
 ];
 
 export const FREE_DRIVE_TRACKS = [
-  { id: "track1", name: "Stunt Track", icon: Trees, desc: "Winding woodland roads with ramps" },
+  { id: "track1", name: "Stunt Track", icon: Mountain, desc: "A high-octane playground featuring steep ramps, loops, and technical obstacles." },
 ];
 
 
