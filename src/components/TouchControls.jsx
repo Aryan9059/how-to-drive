@@ -1,64 +1,8 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useState } from "react";
 import simStore from "../simStore";
+import { Key, Lightbulb, Volume2, ArrowLeft, ArrowRight, ArrowUp, ArrowDown, ChevronUp, ChevronDown } from 'lucide-react';
 
-const SteeringWheel = () => {
-  const [rotation, setRotation] = useState(0);
-  const touchRef = useRef(null);
-  const startXRef = useRef(null);
-  const lastRotRef = useRef(0);
-
-  const onTouchStart = (e) => {
-    e.preventDefault();
-    startXRef.current = e.touches[0].clientX;
-  };
-
-  const onTouchMove = (e) => {
-    e.preventDefault();
-    if (startXRef.current === null) return;
-    const dx = e.touches[0].clientX - startXRef.current;
-    const rot = Math.max(-135, Math.min(135, lastRotRef.current + dx * 0.7));
-    setRotation(rot);
-
-    const DEAD = 10;
-    if (rot < -DEAD)      { simStore.touch.KeyD = true;  simStore.touch.KeyA = false; }
-    else if (rot > DEAD)  { simStore.touch.KeyA = true;  simStore.touch.KeyD = false; }
-    else                  { simStore.touch.KeyA = false; simStore.touch.KeyD = false; }
-  };
-
-  const onTouchEnd = () => {
-    startXRef.current = null;
-    lastRotRef.current = 0;
-    setRotation(0);
-    simStore.touch.KeyA = false;
-    simStore.touch.KeyD = false;
-  };
-
-  return (
-    <div
-      className="tc-wheel-wrap"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
-      ref={touchRef}
-    >
-      <svg
-        width="120" height="120" viewBox="0 0 120 120"
-        style={{ transform: `rotate(${rotation}deg)`, transition: rotation === 0 ? "transform 0.3s ease" : "none" }}
-      >
-        <circle cx="60" cy="60" r="55" fill="none" stroke="#ffffff30" strokeWidth="10" />
-        <circle cx="60" cy="60" r="55" fill="none" stroke="#ffffff88" strokeWidth="3" />
-        <line x1="60" y1="5"  x2="60" y2="40"  stroke="#ffffff99" strokeWidth="6" strokeLinecap="round" />
-        <line x1="10" y1="85" x2="40" y2="70"  stroke="#ffffff99" strokeWidth="6" strokeLinecap="round" />
-        <line x1="110" y1="85" x2="80" y2="70" stroke="#ffffff99" strokeWidth="6" strokeLinecap="round" />
-        <circle cx="60" cy="60" r="14" fill="#ffffff22" stroke="#ffffff66" strokeWidth="2" />
-        <circle cx="60" cy="20" r="5" fill="#ffffffcc" />
-      </svg>
-      <div className="tc-wheel-label">STEER</div>
-    </div>
-  );
-};
-
-const Pedal = ({ label, icon, keyCode, color, activeColor }) => {
+const Pedal = ({ label, icon: Icon, keyCode, color, activeColor }) => {
   const [pressed, setPressed] = useState(false);
 
   const press = (e) => {
@@ -80,13 +24,13 @@ const Pedal = ({ label, icon, keyCode, color, activeColor }) => {
       onTouchEnd={release}
       onTouchCancel={release}
     >
-      <span className="tc-pedal-icon">{icon}</span>
+      <span className="tc-pedal-icon"><Icon size={32} strokeWidth={2.5} /></span>
       <span className="tc-pedal-label">{label}</span>
     </button>
   );
 };
 
-const TapButton = ({ label, icon, keyCode, color, pulse }) => {
+const TapButton = ({ label, icon: Icon, keyCode, color, pulse }) => {
   const [active, setActive] = useState(false);
 
   const press = (e) => {
@@ -107,9 +51,9 @@ const TapButton = ({ label, icon, keyCode, color, pulse }) => {
       onTouchStart={press}
       onTouchEnd={release}
       onTouchCancel={release}
+      aria-label={label}
     >
-      <span className="tc-tap-icon">{icon}</span>
-      <span className="tc-tap-label">{label}</span>
+      <span className="tc-tap-icon"><Icon size={22} /></span>
     </button>
   );
 };
@@ -131,23 +75,25 @@ const GearShifter = ({ gear }) => {
     setTimeout(() => { simStore.touch.KeyQ = false; setDownPressed(false); }, 150);
   };
 
-  const gearNames = { "-1":"R", 0:"N", 1:"1", 2:"2", 3:"3", 4:"4", 5:"5" };
+  const gearNames = { "-1": "R", 0: "N", 1: "1", 2: "2", 3: "3", 4: "4", 5: "5" };
   const gearName = gearNames[gear] ?? "N";
 
   return (
     <div className="tc-gear-wrap">
       <button
-        className={`tc-gear-btn tc-gear-up ${upPressed ? "tc-gear-btn--active" : ""}`}
-        onTouchStart={handleUp}
-      >▲</button>
+        className={`tc-gear-btn tc-gear-down ${downPressed ? "tc-gear-btn--active" : ""}`}
+        onTouchStart={handleDown}
+      ><ChevronDown size={28} /></button>
+
       <div className="tc-gear-display">
         <span className="tc-gear-digit">{gearName}</span>
         <span className="tc-gear-lbl">GEAR</span>
       </div>
+
       <button
-        className={`tc-gear-btn tc-gear-down ${downPressed ? "tc-gear-btn--active" : ""}`}
-        onTouchStart={handleDown}
-      >▼</button>
+        className={`tc-gear-btn tc-gear-up ${upPressed ? "tc-gear-btn--active" : ""}`}
+        onTouchStart={handleUp}
+      ><ChevronUp size={28} /></button>
     </div>
   );
 };
@@ -160,32 +106,38 @@ const TouchControls = ({ gear = 0, headlightsOn = false }) => {
   return (
     <div className="tc-root">
 
+      {/* LEFT SIDE: Handbrake & Gas/Brake Pedals */}
       <div className="tc-left">
-        <SteeringWheel />
-
         <button
           className="tc-handbrake"
           onTouchStart={(e) => { e.preventDefault(); simStore.touch.Space = true; }}
-          onTouchEnd={(e)   => { e.preventDefault(); simStore.touch.Space = false; }}
+          onTouchEnd={(e) => { e.preventDefault(); simStore.touch.Space = false; }}
           onTouchCancel={(e) => { e.preventDefault(); simStore.touch.Space = false; }}
         >
-          <span>🅿️</span>
+          <span style={{ fontSize: '18px', fontWeight: 'bold' }}>℗</span>
           <span className="tc-handbrake-lbl">HANDBRAKE</span>
         </button>
+
+        <div className="tc-pedals">
+          <Pedal label="BRAKE" icon={ArrowDown} keyCode="KeyS" color="#dc2626" activeColor="#f87171" />
+          <Pedal label="GAS" icon={ArrowUp} keyCode="KeyW" color="#16a34a" activeColor="#4ade80" />
+        </div>
       </div>
 
+      {/* CENTER: Utility functions */}
       <div className="tc-center">
-        <TapButton label="ENGINE" icon="🔑" keyCode="KeyI" color="#22c55e" />
-        <TapButton label="LIGHTS"  icon={headlightsOn ? "💡" : "🔦"} keyCode="KeyH" color="#f59e0b" />
-        <TapButton label="HORN"    icon="📯" keyCode="KeyF" color="#3b82f6" pulse />
+        <TapButton label="ENGINE" icon={Key} keyCode="KeyI" color="#22c55e" />
+        <TapButton label="LIGHTS" icon={Lightbulb} keyCode="KeyH" color="#f59e0b" />
+        <TapButton label="HORN" icon={Volume2} keyCode="KeyF" color="#3b82f6" pulse />
       </div>
 
+      {/* RIGHT SIDE: Gear Shifter & Steering Buttons */}
       <div className="tc-right">
         <GearShifter gear={gear} />
 
         <div className="tc-pedals">
-          <Pedal label="GAS"   icon="⬆️" keyCode="KeyW" color="#16a34a"  activeColor="#4ade80" />
-          <Pedal label="BRAKE" icon="⬇️" keyCode="KeyS" color="#dc2626"  activeColor="#f87171" />
+          <Pedal label="LEFT" icon={ArrowLeft} keyCode="KeyA" color="#3b82f6" activeColor="#60a5fa" />
+          <Pedal label="RIGHT" icon={ArrowRight} keyCode="KeyD" color="#3b82f6" activeColor="#60a5fa" />
         </div>
       </div>
     </div>

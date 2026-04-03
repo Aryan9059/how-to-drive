@@ -1,12 +1,13 @@
 import { LESSONS } from "../gameConfig";
 import simStore from "../simStore";
-import { Trophy, XCircle, Lightbulb, Target, Clock, AlertTriangle, Octagon, Play, ArrowLeft, RotateCcw, Check, X } from 'lucide-react';
+import { Trophy, XCircle, Lightbulb, Target, Clock, AlertTriangle, Octagon, Play, ArrowLeft, RotateCcw, Check, X, ShieldCheck, Cpu, Zap } from 'lucide-react';
 
 const LessonOverlay = ({
   phase,
   lessonId,
   difficulty,
   onStart,
+  onBriefingComplete,
   onRetry,
   onNext,
   onMenu,
@@ -34,6 +35,52 @@ const LessonOverlay = ({
           <div className="overlay-actions">
             <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onStart}><Play size={18} fill="currentColor"/> Start Lesson</button>
             <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><ArrowLeft size={18}/> Menu</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "briefing") {
+    return (
+      <div className="overlay-bg overlay-fadein">
+        <div className="overlay-card overlay-card--briefing">
+          <div className="overlay-icon shadow-pulse">
+            <ShieldCheck size={48} color="#60a5fa" />
+          </div>
+          <p className="overlay-eyebrow">DRIVER TRAINING BRIEFING</p>
+          <h2 className="overlay-title">{lesson?.title}</h2>
+          
+          <div className="briefing-grid">
+            <div className="briefing-item">
+              <div className="briefing-header">
+                <ShieldCheck size={20} className="text-blue" />
+                <span>Road Ethics</span>
+              </div>
+              <p>{lesson?.briefing?.ethics}</p>
+            </div>
+
+            <div className="briefing-item">
+              <div className="briefing-header">
+                <Cpu size={20} className="text-purple" />
+                <span>Technical Knowledge</span>
+              </div>
+              <p>{lesson?.briefing?.knowledge}</p>
+            </div>
+
+            <div className="briefing-item">
+              <div className="briefing-header">
+                <Zap size={20} className="text-yellow" />
+                <span>Safety Training</span>
+              </div>
+              <p>{lesson?.briefing?.training}</p>
+            </div>
+          </div>
+
+          <div className="overlay-actions" style={{ marginTop: '30px' }}>
+            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', width: '100%' }} onClick={onBriefingComplete}>
+              <Play size={18} fill="currentColor" /> I'm Ready, Let's Drive!
+            </button>
           </div>
         </div>
       </div>

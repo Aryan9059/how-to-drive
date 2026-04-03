@@ -7,6 +7,7 @@ import Scene from "./components/Scene";
 import MenuScreen from "./components/MenuScreen";
 import SimHUD from "./components/SimHUD";
 import LessonOverlay from "./components/LessonOverlay";
+import BackgroundMusic from "./components/BackgroundMusic";
 import { LESSONS } from "./gameConfig";
 import simStore from "./simStore";
 
@@ -28,14 +29,17 @@ const App = () => {
   const [completedLessons, setCompletedLessons] = useState(loadCompleted);
 
   const [gameMode, setGameMode] = useState("menu");
+  const [menuStep, setMenuStep] = useState("splash");
   const [lessonId, setLessonId] = useState("lesson1");
   const [trackId, setTrackId] = useState("track1");
   const [timeOfDay, setTimeOfDay] = useState("day");
   const [lessonPhase, setLessonPhase] = useState("intro");
   const [canvasKey, setCanvasKey] = useState(0);
+  const [musicMuted, setMusicMuted] = useState(simStore.musicMuted);
 
   const goMenu = useCallback(() => {
     setGameMode("menu");
+    setMenuStep("mode_selection");
     setLessonPhase("intro");
   }, []);
 
@@ -108,53 +112,73 @@ const App = () => {
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.code === "Escape" && gameMode !== "menu") goMenu();
+      if (e.code === "Escape") {
+        if (gameMode !== "menu") {
+          goMenu();
+        } else {
+          if (menuStep === "missions" || menuStep === "free_roam") {
+            setMenuStep("mode_selection");
+          } else if (menuStep === "mode_selection") {
+            setMenuStep("splash");
+          }
+        }
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [gameMode, goMenu]);
-
-  if (gameMode === "menu") {
-    return (
-      <MenuScreen
-        onStartLesson={startLesson}
-        onFreeDrive={startFreeDrive}
-        completedLessons={completedLessons}
-        difficulty={difficulty}
-        onDifficultyChange={setDifficulty}
-      />
-    );
-  }
+  }, [gameMode, menuStep, goMenu]);
 
   return (
     <>
-      <SimHUD lessonId={gameMode === "lesson" ? lessonId : null} mode={gameMode} />
-
-      {gameMode === "lesson" && lessonPhase !== "active" && (
-        <LessonOverlay
-          phase={lessonPhase}
-          lessonId={lessonId}
+      <BackgroundMusic mode={gameMode} muted={musicMuted} />
+      {gameMode === "menu" ? (
+        <MenuScreen
+          menuStep={menuStep}
+          setMenuStep={setMenuStep}
+          onStartLesson={startLesson}
+          onFreeDrive={startFreeDrive}
+          completedLessons={completedLessons}
           difficulty={difficulty}
-          onStart={() => setLessonPhase("active")}
-          onRetry={retryLesson}
-          onNext={nextLesson}
-          onMenu={goMenu}
+          onDifficultyChange={setDifficulty}
+          musicMuted={musicMuted}
+          onToggleMusic={() => {
+            const next = !simStore.musicMuted;
+            simStore.musicMuted = next;
+            setMusicMuted(next);
+          }}
         />
-      )}
+      ) : (
+        <>
+          <SimHUD lessonId={gameMode === "lesson" ? lessonId : null} mode={gameMode} />
 
-      <Canvas key={canvasKey} style={{ position: "fixed", inset: 0 }}>
-        <Physics broadphase="SAP" gravity={[0, -2.1, 0]}>
-          <Scene
-            mode={gameMode}
-            lessonId={lessonId}
-            trackId={trackId}
-            difficulty={difficulty}
-            timeOfDay={timeOfDay}
-            onLessonPass={handleLessonPass}
-            onLessonFail={handleLessonFail}
-          />
-        </Physics>
-      </Canvas>
+          {gameMode === "lesson" && lessonPhase !== "active" && (
+            <LessonOverlay
+              phase={lessonPhase}
+              lessonId={lessonId}
+              difficulty={difficulty}
+              onStart={() => setLessonPhase("briefing")}
+              onBriefingComplete={() => setLessonPhase("active")}
+              onRetry={retryLesson}
+              onNext={nextLesson}
+              onMenu={goMenu}
+            />
+          )}
+
+          <Canvas key={canvasKey} style={{ position: "fixed", inset: 0 }}>
+            <Physics broadphase="SAP" gravity={[0, -2.1, 0]}>
+              <Scene
+                mode={gameMode}
+                lessonId={lessonId}
+                trackId={trackId}
+                difficulty={difficulty}
+                timeOfDay={timeOfDay}
+                onLessonPass={handleLessonPass}
+                onLessonFail={handleLessonFail}
+              />
+            </Physics>
+          </Canvas>
+        </>
+      )}
     </>
   );
 };

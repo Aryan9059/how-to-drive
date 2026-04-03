@@ -12,6 +12,7 @@ const simStore = {
   
   headlightsOn: false,
   hornActive: false,
+  musicMuted: false,
 
   
   metrics: {

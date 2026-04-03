@@ -1,18 +1,25 @@
 import { useState } from "react";
 import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY } from "../gameConfig";
-import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass, Play, ChevronLeft, Car } from 'lucide-react';
+import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass, Play, ChevronLeft, Car, Volume2, VolumeX } from 'lucide-react';
 
 const MenuScreen = ({
+  menuStep,
+  setMenuStep,
   onStartLesson,
   onFreeDrive,
   completedLessons,
   difficulty,
   onDifficultyChange,
+  musicMuted,
+  onToggleMusic,
 }) => {
-  const [menuStep, setMenuStep] = useState("splash"); // splash, mode_selection, missions, free_roam
   const [selectedTod, setSelectedTod] = useState("day");
 
-  const isUnlocked = (idx) => true;
+  const isUnlocked = (idx) => {
+    if (idx === 0) return true;
+    const prevLesson = LESSONS[idx - 1];
+    return completedLessons[prevLesson.id] !== undefined;
+  };
 
   const renderSplash = () => (
     <div className="splash-content">
@@ -76,6 +83,15 @@ const MenuScreen = ({
       <div className="menu-bg-glow" />
 
       <div className="menu-inner">
+        <button 
+          className="tod-btn" 
+          onClick={onToggleMusic}
+          style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 100 }}
+        >
+          {musicMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          <span className="tod-lbl">{musicMuted ? "Music Off" : "Music On"}</span>
+        </button>
+
         {menuStep === "splash" && renderSplash()}
         {menuStep === "mode_selection" && renderModeSelection()}
 
@@ -170,7 +186,7 @@ const MenuScreen = ({
 
         {menuStep !== "splash" && (
           <footer className="menu-controls">
-            {[["I", "Ignition"], ["W/S", "Drive/Brake"], ["E/Q", "Gear ▲/▼"], ["CTRL", "Clutch"], ["SPACE", "Handbrake"], ["H", "Headlights"], ["F", "Horn"], ["R", "Reset"], ["C", "Camera"], ["ESC", "Menu"]].map(([k, l]) => (
+            {[["I", "Ignition"], ["W/S", "Drive/Brake"], ["E/Q", "Gear ▲/▼"], ["C", "Clutch"], ["SPACE", "Handbrake"], ["H", "Headlights"], ["F", "Horn"], ["R", "Reset"], ["V", "Camera"], ["ESC", "Menu"]].map(([k, l]) => (
               <div key={k} className="ctrl-item">
                 <kbd className="ctrl-key">{k}</kbd>
                 <span className="ctrl-label">{l}</span>

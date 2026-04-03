@@ -6,10 +6,10 @@ import TouchControls from "./TouchControls";
 const Gauge = ({ value, max, color, label, unit, redline }) => {
   const r = 48;
   const circ = 2 * Math.PI * r;
-  const arc  = 0.75;
-  const pct  = Math.max(0, Math.min(1, value / max));
+  const arc = 0.75;
+  const pct = Math.max(0, Math.min(1, value / max));
   const filled = pct * circ * arc;
-  const isRed  = redline && value >= redline;
+  const isRed = redline && value >= redline;
 
   return (
     <div className="gauge-wrap">
@@ -47,10 +47,10 @@ const ShiftIndicator = ({ rpm }) => {
 
 const EngineLight = ({ state }) => {
   const map = {
-    off:      { col: "#6b7280", label: "OFF" },
+    off: { col: "#6b7280", label: "OFF" },
     cranking: { col: "#fbbf24", label: "CRANK…" },
-    on:       { col: "#22c55e", label: "ON" },
-    stalled:  { col: "#ef4444", label: "STALLED" },
+    on: { col: "#22c55e", label: "ON" },
+    stalled: { col: "#ef4444", label: "STALLED" },
   };
   const { col, label } = map[state] || map.off;
   return (
@@ -79,14 +79,14 @@ const SimHUD = ({ lessonId, mode }) => {
     if (tel.headlightsOn !== prevLights) {
       setPrevLights(tel.headlightsOn);
       setLightAlert({ show: true, mode: tel.headlightsOn ? "ON" : "OFF" });
-      const id = setTimeout(() => setLightAlert((s) => ({ ...s, show: false })), 2000);
+      const id = setTimeout(() => setLightAlert((s) => ({ ...s, show: false })), 1000);
       return () => clearTimeout(id);
     }
   }, [tel.headlightsOn, prevLights]);
 
-  const lesson   = lessonId ? LESSONS.find((l) => l.id === lessonId) : null;
+  const lesson = lessonId ? LESSONS.find((l) => l.id === lessonId) : null;
   const gearName = GEAR_NAMES[tel.gear] ?? "N";
-  const touch    = isTouchDevice();
+  const touch = isTouchDevice();
 
   return (
     <>
@@ -96,7 +96,7 @@ const SimHUD = ({ lessonId, mode }) => {
             {lightAlert.mode === "ON" ? "💡 HEADLIGHTS ON" : "🔦 HEADLIGHTS OFF"}
           </div>
         )}
-        
+
         <div className="simhud-badge">
           {mode === "lesson" && lesson ? (
             <>
@@ -155,11 +155,11 @@ const SimHUD = ({ lessonId, mode }) => {
             <div className="key-row"><kbd className="hud-key">I</kbd><span>Ignition</span></div>
             <div className="key-row"><kbd className="hud-key">W/S</kbd><span>Throttle/Brake</span></div>
             <div className="key-row"><kbd className="hud-key">E/Q</kbd><span>Gear ▲/▼</span></div>
-            <div className="key-row"><kbd className="hud-key">CTRL</kbd><span>Clutch</span></div>
+            <div className="key-row"><kbd className="hud-key">C</kbd><span>Clutch</span></div>
             <div className="key-row"><kbd className="hud-key">SPACE</kbd><span>Handbrake</span></div>
             <div className="key-row"><kbd className="hud-key">H</kbd><span>Headlights</span></div>
             <div className="key-row"><kbd className="hud-key">F</kbd><span>Horn</span></div>
-            <div className="key-row"><kbd className="hud-key">C</kbd><span>Camera</span></div>
+            <div className="key-row"><kbd className="hud-key">V</kbd><span>Camera</span></div>
           </div>
         )}
       </div>

@@ -30,6 +30,279 @@ html,
   transition: background 0.5s ease;
 }
 
+/* --- UPDATE THESE OVERLAY STYLES --- */
+.overlay-card {
+  background: rgba(40, 10, 10, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 30px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+
+  /* Fix for smaller screens/landscape modes to prevent cutoffs */
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Elegant scrollbar for overlays */
+.overlay-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overlay-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+@media (max-height: 500px) {
+  .overlay-card {
+    padding: 24px;
+    gap: 10px;
+  }
+
+  .overlay-title {
+    font-size: 1.8rem;
+  }
+
+  .overlay-icon {
+    margin-bottom: 0px;
+  }
+
+  .overlay-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+
+/* =========================================
+   MOBILE TOUCH CONTROLS
+   ========================================= */
+.tc-root {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 9999;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.tc-left,
+.tc-right,
+.tc-center {
+  pointer-events: auto;
+  display: flex;
+  gap: 10px;
+}
+
+/* Stacking children vertically and aligning to center block */
+.tc-left,
+.tc-right {
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.tc-center {
+  align-items: flex-end;
+  gap: 15px;
+  padding-bottom: 5px;
+}
+
+/* Pedals (Gas/Brake & Left/Right) */
+.tc-pedals {
+  display: flex;
+  gap: 15px;
+}
+
+.tc-pedal {
+  width: 75px;
+  /* Square dimensions */
+  height: 75px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 3px solid var(--pedal-color);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  transition: background 0.1s, transform 0.1s;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.tc-pedal--active {
+  background: var(--pedal-active);
+  transform: scale(0.92) translateY(4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.tc-pedal-icon {
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+}
+
+.tc-pedal-label {
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+/* Tap Buttons (Ignition, Lights, Horn) */
+.tc-tap {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--tap-color);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  transition: background 0.1s, transform 0.1s;
+}
+
+.tc-tap--active {
+  background: var(--tap-color);
+  transform: scale(0.9);
+}
+
+.tc-tap--pulse {
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Handbrake */
+.tc-handbrake {
+  width: 165px;
+  /* Matches the width of the 2 pedals + gap below it */
+  height: 45px;
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.4);
+  border: 2px solid #ef4444;
+  color: white;
+  display: flex;
+  flex-direction: row;
+  /* Horizontal layout for compact space */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  touch-action: none;
+}
+
+.tc-handbrake:active {
+  background: #ef4444;
+  transform: scale(0.96);
+}
+
+.tc-handbrake-lbl {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+/* Gear Shifter */
+.tc-gear-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 14px;
+  padding: 8px;
+  width: 165px;
+  /* Matches the width of the 2 steering buttons */
+  border: 2px solid #6366f1;
+}
+
+.tc-gear-btn {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  transition: transform 0.1s;
+}
+
+.tc-gear-btn--active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.85);
+}
+
+.tc-gear-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tc-gear-digit {
+  font-size: 26px;
+  font-weight: bold;
+  color: white;
+  line-height: 1;
+}
+
+.tc-gear-lbl {
+  font-size: 10px;
+  color: #a5b4fc;
+  font-weight: bold;
+}
+
+@media screen and (orientation: portrait) and (max-width: 768px) {
+  #root {
+    display: none;
+  }
+
+  body::before {
+    content: "Please rotate your device to landscape mode 🔄";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #111;
+    color: white;
+    font-size: 20px;
+    text-align: center;
+    padding: 20px;
+    z-index: 10000;
+  }
+}
+
 .menu-root--splash {
   background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.6)), url('/main_menu.jpg');
   background-size: cover;
@@ -122,8 +395,15 @@ html,
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .big-play-btn {
@@ -729,19 +1009,215 @@ kbd {
   z-index: 200;
 }
 
-.overlay-card {
-  background: rgba(40, 10, 10, 0.6);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 30px;
-  padding: 40px;
-  max-width: 500px;
-  width: 90vw;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+/* =========================================
+   MOBILE MENU RESPONSIVENESS
+   ========================================= */
+@media (max-width: 768px),
+(max-height: 500px) {
+
+  .menu-inner {
+    padding: 20px 10px;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .splash-content {
+    gap: 20px;
+  }
+
+  /* Make logo smaller on mobile */
+  .splash-content .menu-header div[style*="width: 140px"] {
+    width: 90px !important;
+    height: 90px !important;
+    padding: 15px !important;
+    margin-bottom: 15px !important;
+  }
+
+  .splash-content .menu-header img {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .menu-title {
+    font-size: clamp(2.5rem, 10vw, 3rem) !important;
+  }
+
+  .menu-subtitle {
+    font-size: 0.9rem;
+    padding: 0 10px;
+  }
+
+  .big-play-btn {
+    padding: 15px 50px;
+    font-size: 1.2rem;
+  }
+
+  /* Mode selection grid */
+  .mode-grid {
+    grid-template-columns: 1fr;
+    /* Stack vertically on mobile */
+    gap: 15px;
+    padding: 0 10px;
+  }
+
+  .mode-card {
+    padding: 20px;
+    flex-direction: row;
+    /* Horizontal layout for compact space */
+    text-align: left;
+    gap: 15px;
+  }
+
+  .mode-card-icon {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+  }
+
+  .mode-card-title {
+    font-size: 1.2rem;
+  }
+
+  .mode-card-desc {
+    text-align: left;
+    font-size: 0.8rem;
+  }
+
+  /* Settings row (Difficulty & Time of Day) */
+  .diff-toggle,
+  .tod-row {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tod-btn {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+
+  .diff-btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  /* Level Cards - Horizontal Scroll Box Style */
+  .level-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 15px 5px 25px 5px;
+    width: 100%;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    justify-content: flex-start;
+  }
+
+  .level-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .level-card {
+    flex: 0 0 200px;
+    max-width: 200px;
+    height: 220px; /* Rigid height to prevent growing */
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 15px 40px 15px; /* Extra bottom padding for badges */
+    scroll-snap-align: center;
+    background: rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .level-card-icon {
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  .level-card-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .level-card-info {
+    text-align: center;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .level-card-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    padding: 0 5px;
+  }
+
+  .level-card-desc {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    opacity: 0.65;
+    text-align: center;
+  }
+
+  .level-card-num {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 0.65rem;
+    opacity: 0.5;
+  }
+
+  .level-card-check {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+
+  .done-badge,
+  .lock-badge {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+  }
+
+  /* Adjust back button positioning */
+  .menu-back-btn {
+    top: 15px;
+    left: 15px;
+    padding: 8px 12px;
+  }
+
+  /* Hide desktop keyboard controls on mobile */
+  .menu-controls {
+    display: none;
+  }
+
+  /* SimHUD adjustments for mobile layout */
+  .simhud-objective {
+    top: 10px;
+    padding: 8px 16px;
+    font-size: 0.75rem;
+    width: 90%;
+    text-align: center;
+  }
 }
 
 .overlay-card--pass {
@@ -880,6 +1356,129 @@ kbd {
 }
 
 @keyframes toastFade {
-  from { opacity: 0; transform: translate(-50%, -10px); }
-  to { opacity: 1; transform: translate(-50%, 0); }
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Driver Training Briefing Styles */
+.overlay-card--briefing {
+  max-width: 650px !important;
+  border-color: rgba(96, 165, 250, 0.4) !important;
+  background: rgba(30, 58, 138, 0.15) !important;
+}
+
+.briefing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.briefing-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.briefing-item:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.briefing-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.briefing-item p {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.text-blue {
+  color: #60a5fa;
+}
+
+.text-purple {
+  color: #c084fc;
+}
+
+.text-yellow {
+  color: #facc15;
+}
+
+.shadow-pulse {
+  animation: shadowPulse 2s infinite;
+}
+
+@keyframes shadowPulse {
+  0% {
+    filter: drop-shadow(0 0 5px rgba(96, 165, 250, 0.4));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 15px rgba(96, 165, 250, 0.8));
+  }
+
+  100% {
+    filter: drop-shadow(0 0 5px rgba(96, 165, 250, 0.4));
+  }
+}
+
+.overlay-fadein {
+  animation: overlayFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes ignoreThisToPreserveTheEnd {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes toastFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }

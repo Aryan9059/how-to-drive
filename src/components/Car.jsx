@@ -72,6 +72,9 @@ const Car = ({
 
   const hornHonk = useCallback(() => {
     simStore.hornActive = true;
+    const hornAudio = new Audio("/horn.wav");
+    hornAudio.volume = 0.5;
+    hornAudio.play().catch(() => {});
     setTimeout(() => { simStore.hornActive = false; }, 400);
   }, []);
 
@@ -104,6 +107,37 @@ const Car = ({
   const lightR = useRef();
   const targetL = useRef();
   const targetR = useRef();
+  const engineStartAudio = useRef(null);
+  const carOnAudio = useRef(null);
+
+  useEffect(() => {
+    engineStartAudio.current = new Audio("/engine_start.wav");
+    carOnAudio.current = new Audio("/car_on.wav");
+    carOnAudio.current.loop = true;
+
+    return () => {
+      engineStartAudio.current?.pause();
+      carOnAudio.current?.pause();
+    };
+  }, []);
+
+  useEffect(() => {
+    const start = engineStartAudio.current;
+    const running = carOnAudio.current;
+    if (!start || !running) return;
+
+    if (engineState === "cranking") {
+      start.currentTime = 0;
+      start.play().catch(() => {});
+    } else if (engineState === "on") {
+      running.play().catch(() => {});
+    } else {
+      running.pause();
+      running.currentTime = 0;
+      start.pause();
+      start.currentTime = 0;
+    }
+  }, [engineState]);
 
   useEffect(() => {
     if (lightL.current && targetL.current) lightL.current.target = targetL.current;
@@ -118,7 +152,7 @@ const Car = ({
     const handbrake = !!k.Space;
     const steerLeft = !!k.KeyA;
     const steerRight = !!k.KeyD;
-    const clutch = difficulty === "easy" ? false : !!k.ControlLeft;
+    const clutch = difficulty === "easy" ? false : !!k.KeyC;
 
     simStore.clutchPressed = clutch;
     simStore.handbrake = handbrake;
@@ -142,6 +176,12 @@ const Car = ({
     }
 
     const canDrive = eng === "on";
+    
+    if (canDrive && carOnAudio.current) {
+      const isMuted = simStore.musicMuted;
+      const targetVol = isMuted ? 0 : (throttle ? 1.0 : 0.0);
+      carOnAudio.current.volume += (targetVol - carOnAudio.current.volume) * Math.min(1, delta * 4);
+    }
     const clutchFactor = clutch ? 0 : 1;
     const ratio = GEAR_RATIOS[g] ?? 0;
     const rpmFactor = Math.max(0, Math.min(1,

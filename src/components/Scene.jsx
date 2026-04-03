@@ -31,7 +31,7 @@ const Scene = ({
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.code === "KeyC") {
+      if (e.code === "KeyV") {
         setView((v) => {
           if (v === 3) { setCameraPos([-21, 34, 55 + Math.random() * 0.01]); return 0; }
           return v + 1;

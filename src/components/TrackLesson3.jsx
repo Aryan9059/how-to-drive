@@ -39,31 +39,32 @@ const GearGate = ({ x, label, color, emissive }) => (
 
 const TrackLesson3 = () => (
   <>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[100, 0, 0]} receiveShadow>
-      <planeGeometry args={[400, 100]} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[250, 0, 0]} receiveShadow>
+      <planeGeometry args={[700, 100]} />
       <meshStandardMaterial color="#3d6b3d" roughness={1} />
     </mesh>
 
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[120, 0.01, -3]} receiveShadow>
-      <planeGeometry args={[300, 14]} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[260, 0.01, -3]} receiveShadow>
+      <planeGeometry args={[600, 14]} />
       <meshStandardMaterial color="#303030" roughness={0.9} />
     </mesh>
 
-    <Footpath position={[120, 0.1, 4.75]} args={[300, 0.2, 1.5]} />
-    <Footpath position={[120, 0.1, -10.75]} args={[300, 0.2, 1.5]} />
+    <Footpath position={[260, 0.1, 4.75]} args={[600, 0.2, 1.5]} />
+    <Footpath position={[260, 0.1, -10.75]} args={[600, 0.2, 1.5]} />
 
-    {Array.from({ length: 50 }).map((_, i) => (
+    {Array.from({ length: 95 }).map((_, i) => (
       <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-25 + i * 6, 0.02, -3]}>
         <planeGeometry args={[3, 0.2]} />
         <meshStandardMaterial color="#ffee00" opacity={0.6} transparent />
       </mesh>
     ))}
 
-    <GearGate x={60} label="2" color="#22cc44" emissive="#00ff44" />
-    <GearGate x={140} label="3" color="#ffaa00" emissive="#ffcc00" />
-    <GearGate x={220} label="4" color="#cc2222" emissive="#ff4400" />
+    {/* Spread gates much wider */}
+    <GearGate x={100} label="2" color="#22cc44" emissive="#00ff44" />
+    <GearGate x={300} label="3" color="#ffaa00" emissive="#ffcc00" />
+    <GearGate x={500} label="4" color="#cc2222" emissive="#ff4400" />
 
-    {[45, 125, 205].map((x, i) => Array.from({ length: 5 }).map((_, j) => (
+    {[85, 285, 485].map((x, i) => Array.from({ length: 5 }).map((_, j) => (
       <mesh key={`rz-${i}-${j}`} rotation={[-Math.PI / 2, 0, 0]} position={[x + j * 1.2, 0.025, -3]}>
         <planeGeometry args={[0.5, 14]} />
         <meshStandardMaterial color={j % 2 === 0 ? "#ffcc00" : "#303030"} />
@@ -76,15 +77,15 @@ const TrackLesson3 = () => (
     </mesh>
 
     {[0, 1, 2, 3, 4, 5, 6].map(i => (
-      <mesh key={`fl-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[260, 0.03, -0.5 + i * -1.4]}>
+      <mesh key={`fl-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[540, 0.03, -0.5 + i * -1.4]}>
         <planeGeometry args={[0.6, 1.3]} />
         <meshStandardMaterial color={i % 2 === 0 ? "#000" : "#fff"} />
       </mesh>
     ))}
 
-    <StaticBox position={[280, 3, -3]} args={[2, 6, 16]} color="#222" />
+    <StaticBox position={[560, 3, -3]} args={[2, 6, 16]} color="#222" />
 
-    {Array.from({ length: 25 }).map((_, i) => (
+    {Array.from({ length: 45 }).map((_, i) => (
       <group key={`bldg-${i}`}>
         <StaticBox position={[-20 + i * 12, 6, 12]} args={[8, 12 + Math.random() * 8, 8]} color="#404040" />
         <StaticBox position={[-20 + i * 12, 8, -18]} args={[8, 16 + Math.random() * 10, 8]} color="#2c3e50" />
