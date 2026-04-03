@@ -12,11 +12,11 @@ import { LESSON_CAR_STARTS, TRACK_CAR_STARTS } from "../gameConfig";
 const debug = false;
 
 const Scene = ({
-  mode       = "lesson",
-  lessonId   = "lesson1",
-  trackId    = "track1",
+  mode = "lesson",
+  lessonId = "lesson1",
+  trackId = "track1",
   difficulty = "easy",
-  timeOfDay  = "day",
+  timeOfDay = "day",
   onLessonPass,
   onLessonFail,
 }) => {
@@ -25,7 +25,7 @@ const Scene = ({
 
   const carStart = mode === "lesson"
     ? (LESSON_CAR_STARTS[lessonId] || LESSON_CAR_STARTS.lesson1)
-    : (TRACK_CAR_STARTS[trackId]   || TRACK_CAR_STARTS.track1);
+    : (TRACK_CAR_STARTS[trackId] || TRACK_CAR_STARTS.track1);
 
   const activeTrack = mode === "freeDrive" ? trackId : lessonId;
 
@@ -43,84 +43,38 @@ const Scene = ({
   }, []);
 
   const tod = timeOfDay;
-  
+
   const todFog = () => {
     switch (tod) {
-      case "dawn":  return <fog attach="fog" args={["#f08040", 60, 400]} />;
-      case "day":   return <fog attach="fog" args={["#6dcef5", 100, 800]} />;
-      case "dusk":  return <fog attach="fog" args={["#1a0a30", 50, 400]} />;
+      case "dawn": return <fog attach="fog" args={["#f08040", 60, 400]} />;
+      case "day": return <fog attach="fog" args={["#6dcef5", 100, 800]} />;
+      case "dusk": return <fog attach="fog" args={["#1a0a30", 50, 400]} />;
       case "night": return <fog attach="fog" args={["#010208", 20, 200]} />;
-      default:      return null;
+      default: return null;
     }
   };
 
   const trackLighting = () => {
-    if (activeTrack === "track2") return (
-      <>
-        <ambientLight intensity={0.4} color="#ffbb66" />
-        <directionalLight position={[15, 30, 10]} intensity={1.5} color="#ffaa44" castShadow />
-      </>
-    );
-    if (activeTrack === "track3") return (
-      <>
-        <ambientLight intensity={0.1} color="#3344aa" />
-        <pointLight position={[0, 20, 0]}   intensity={12} color="#4466ff" />
-        <pointLight position={[-18, 8, 0]}  intensity={8}  color="#ff00aa" />
-        <pointLight position={[18, 8, 0]}   intensity={8}  color="#00ffaa" />
-      </>
-    );
-    if (activeTrack === "track4") return (
-      <>
-        <ambientLight intensity={0.6} color="#aaccff" />
-        <directionalLight position={[10, 30, 5]}  intensity={1.8} color="#ddeeff" castShadow />
-        <directionalLight position={[-10, 15, -5]} intensity={0.6} color="#bbddff" />
-        <pointLight position={[0, 20, 0]} intensity={5} color="#88aacc" distance={120} />
-      </>
-    );
-    if (activeTrack === "track5") return (
-      <>
-        <ambientLight intensity={0.12} color="#220800" />
-        <directionalLight position={[5, 20, 5]}  intensity={0.4} color="#ff3300" castShadow />
-        <pointLight position={[0, 2, 0]}  intensity={20} color="#ff4400" distance={60} decay={2} />
-        <pointLight position={[0, 10, 0]} intensity={8}  color="#ff6600" distance={100} decay={1.5} />
-      </>
-    );
     return null;
   };
 
-  const useTrackOverride = ["track3", "track5", "track_city"].includes(activeTrack);
-  const nightOverride = activeTrack === "track3" ? (
-    <>
-      <color attach="background" args={["#04060f"]} />
-      <fog   attach="fog"        args={["#04060f", 40, 130]} />
-    </>
-  ) : activeTrack === "track5" ? (
-    <>
-      <color attach="background" args={["#100300"]} />
-      <fog   attach="fog"        args={["#100300", 35, 120]} />
-    </>
-  ) : activeTrack === "track_city" ? (
-    <>
-      <color attach="background" args={["#87ceeb"]} />
-      <fog   attach="fog"        args={["#87ceeb", 200, 2500]} />
-      <Environment files="textures/envmap.hdr" background={tod === "day"} />
-    </>
-  ) : null;
+  const useTrackOverride = false;
+  const nightOverride = null;
 
   const content = (
     <Suspense fallback={null}>
       {!useTrackOverride && <DynamicSky timeOfDay={tod} />}
       {!useTrackOverride && todFog()}
-      
+
       {useTrackOverride ? nightOverride : null}
       {trackLighting()}
-      
-      {!["track3","track5", "track_city"].includes(activeTrack) && (
+
+      {!["track3", "track5", "track_city"].includes(activeTrack) && (
         <Environment files="textures/envmap.hdr" background={false} />
       )}
 
       <PerspectiveCamera makeDefault position={cameraPos} fov={40} />
-      {cameraView === 0 && <OrbitControls target={[0,0,0]} />}
+      {cameraView === 0 && <OrbitControls target={[0, 0, 0]} />}
 
       <Car
         cameraView={cameraView}
@@ -144,7 +98,7 @@ const Scene = ({
   );
 
   return debug
-    ? <><axesHelper args={[40]} /><gridHelper args={[80,80]} /><Debug>{content}</Debug></>
+    ? <><axesHelper args={[40]} /><gridHelper args={[80, 80]} /><Debug>{content}</Debug></>
     : content;
 };
 
