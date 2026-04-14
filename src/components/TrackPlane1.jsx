@@ -1,14 +1,16 @@
 /**
- * TrackPlane1.jsx – Airfield / takeoff zone for plane missions
- * Long runway + open sky arena
+ * TrackPlane1.jsx – Airfield Takeoff (redesigned)
+ * Full runway with proper markings, tower, hangar, PAPI, windsock.
+ * Runway runs along +X. Start at x=-90.
+ * Altitude gate rings at (50,15,0), (130,23,0), (210,31,0) — matching LessonMonitor.
  */
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
 
-const StaticBox = ({ position, args, color = "#888" }) => {
-  useBox(() => ({ type: "Static", args, position }), useRef(null));
+const StaticBox = ({ position, args, color = "#888", rotation = [0, 0, 0] }) => {
+  useBox(() => ({ type: "Static", args, position, rotation }), useRef(null));
   return (
-    <mesh position={position} castShadow receiveShadow>
+    <mesh position={position} rotation={rotation} castShadow receiveShadow>
       <boxGeometry args={args} />
       <meshStandardMaterial color={color} roughness={0.7} />
     </mesh>
@@ -17,81 +19,157 @@ const StaticBox = ({ position, args, color = "#888" }) => {
 
 const TrackPlane1 = () => (
   <>
-    {/* Grassy airfield ground */}
+    {/* ── AIRFIELD GROUND ── */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-      <planeGeometry args={[800, 800]} />
+      <planeGeometry args={[900, 800]} />
       <meshStandardMaterial color="#5a8a3a" roughness={1} />
     </mesh>
 
-    {/* Main runway */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[150, 0.01, 0]} receiveShadow>
-      <planeGeometry args={[500, 25]} />
-      <meshStandardMaterial color="#2a2a2a" roughness={0.8} />
+    {/* ── APRON (concrete pad) ── */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-120, 0.005, 0]} receiveShadow>
+      <planeGeometry args={[100, 80]} />
+      <meshStandardMaterial color="#b0b0b0" roughness={0.8} />
     </mesh>
 
-    {/* Runway centerline dashes */}
-    {Array.from({ length: 30 }).map((_, i) => (
-      <mesh key={`cl${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-100 + i * 18, 0.02, 0]}>
-        <planeGeometry args={[8, 0.4]} />
-        <meshStandardMaterial color="#ffffff" opacity={0.8} transparent />
-      </mesh>
-    ))}
+    {/* ── MAIN RUNWAY ── */}
+    {/* Asphalt */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[150, 0.01, 0]} receiveShadow>
+      <planeGeometry args={[600, 28]} />
+      <meshStandardMaterial color="#2a2a2a" roughness={0.8} />
+    </mesh>
+    {/* Runway edge lines */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[150, 0.015, 13.8]}>
+      <planeGeometry args={[600, 0.4]} />
+      <meshStandardMaterial color="#ffffff" />
+    </mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[150, 0.015, -13.8]}>
+      <planeGeometry args={[600, 0.4]} />
+      <meshStandardMaterial color="#ffffff" />
+    </mesh>
 
-    {/* Runway threshold markings */}
-    {[-1.5, 0, 1.5].map((z, i) => (
-      <mesh key={`th${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-96, 0.02, z * 4]}>
-        <planeGeometry args={[6, 1.5]} />
+    {/* ── THRESHOLD MARKINGS (west end) ── */}
+    {[-9, -6, -3, 0, 3, 6, 9].map((z, i) => (
+      <mesh key={`th${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-90, 0.02, z]}>
+        <planeGeometry args={[8, 1.5]} />
         <meshStandardMaterial color="#ffffff" />
       </mesh>
     ))}
 
-    {/* Runway edge lights */}
-    {Array.from({ length: 20 }).map((_, i) => (
-      <group key={`rl${i}`}>
-        <mesh position={[-90 + i * 20, 0.4, 13]}>
-          <sphereGeometry args={[0.15, 6, 6]} />
-          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} />
+    {/* ── CENTERLINE DASHES ── */}
+    {Array.from({ length: 32 }).map((_, i) => (
+      <mesh key={`cl${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-76 + i * 18, 0.02, 0]}>
+        <planeGeometry args={[9, 0.45]} />
+        <meshStandardMaterial color="#ffffff" opacity={0.85} transparent />
+      </mesh>
+    ))}
+
+    {/* ── TOUCHDOWN ZONE MARKS ── */}
+    {[1, 2, 3].map((n) =>
+      [-7, -3.5, 3.5, 7].map((z, j) => (
+        <mesh key={`tz${n}${j}`} rotation={[-Math.PI / 2, 0, 0]} position={[-75 + n * 30, 0.02, z]}>
+          <planeGeometry args={[15, 1.8]} />
+          <meshStandardMaterial color="#ffffff" opacity={0.7} transparent />
         </mesh>
-        <mesh position={[-90 + i * 20, 0.4, -13]}>
-          <sphereGeometry args={[0.15, 6, 6]} />
-          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3} />
+      ))
+    )}
+
+    {/* ── RUNWAY EDGE LIGHTS ── */}
+    {Array.from({ length: 28 }).map((_, i) => (
+      <group key={`rel${i}`}>
+        <mesh position={[-82 + i * 22, 0.3, 15]}>
+          <sphereGeometry args={[0.18, 6, 6]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={4} />
+        </mesh>
+        <mesh position={[-82 + i * 22, 0.3, -15]}>
+          <sphereGeometry args={[0.18, 6, 6]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={4} />
         </mesh>
       </group>
     ))}
 
-    {/* Hangar */}
-    <StaticBox position={[-50, 6, -60]} args={[40, 12, 25]} color="#888" />
-    {/* Tower */}
-    <StaticBox position={[-60, 10, 40]} args={[5, 20, 5]} color="#aaa" />
-    <StaticBox position={[-60, 22, 40]} args={[8, 4, 8]} color="#999" />
-    <mesh position={[-60, 22, 40]}>
-      <boxGeometry args={[8, 4, 8]} />
-      <meshStandardMaterial color="#88aacc" metalness={0} roughness={0} transparent opacity={0.4} />
-    </mesh>
-
-    {/* Wind sock */}
-    <StaticBox position={[-30, 5, 20]} args={[0.2, 10, 0.2]} color="#333" />
-    <mesh position={[-30, 10.5, 20.8]}>
-      <coneGeometry args={[0.4, 1.5, 8]} />
-      <meshStandardMaterial color="#ff6600" />
-    </mesh>
-
-    {/* Checkpoint rings (altitude gates) */}
-    {[0, 1, 2].map((i) => (
-      <group key={`ag${i}`} position={[50 + i * 80, 15 + i * 8, 0]}>
-        <mesh>
-          <torusGeometry args={[12, 0.6, 8, 24]} />
-          <meshStandardMaterial color="#ffdd00" emissive="#ffaa00" emissiveIntensity={1} />
-        </mesh>
-        <pointLight color="#ffdd00" intensity={3} distance={20} />
-      </group>
+    {/* ── THRESHOLD LIGHTS (green at start) ── */}
+    {[-12, -8, -4, 0, 4, 8, 12].map((z, i) => (
+      <mesh key={`thl${i}`} position={[-94, 0.3, z]}>
+        <sphereGeometry args={[0.2, 6, 6]} />
+        <meshStandardMaterial color="#00ff44" emissive="#00ff44" emissiveIntensity={5} />
+      </mesh>
     ))}
 
-    {/* Taxiways */}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-70, 0.01, -30]}>
+    {/* ── PAPI LIGHTS (4 boxes beside runway) ── */}
+    {[0, 1, 2, 3].map((i) => (
+      <mesh key={`papi${i}`} position={[20 + i * 3, 0.5, 22]}>
+        <boxGeometry args={[2.5, 0.8, 1.2]} />
+        <meshStandardMaterial
+          color={i < 2 ? "#ff2200" : "#ffffff"}
+          emissive={i < 2 ? "#ff2200" : "#ffffff"}
+          emissiveIntensity={2}
+        />
+      </mesh>
+    ))}
+
+    {/* ── TAXIWAYS ── */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-110, 0.008, -20]} receiveShadow>
       <planeGeometry args={[60, 10]} />
       <meshStandardMaterial color="#333" roughness={0.9} />
     </mesh>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-80, 0.008, -18]} receiveShadow>
+      <planeGeometry args={[10, 26]} />
+      <meshStandardMaterial color="#333" roughness={0.9} />
+    </mesh>
+    {/* Yellow taxiway centreline */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-110, 0.012, -20]}>
+      <planeGeometry args={[60, 0.25]} />
+      <meshStandardMaterial color="#ffcc00" />
+    </mesh>
+
+    {/* ── HANGAR ── */}
+    <StaticBox position={[-60, 9, -80]} args={[60, 18, 35]} color="#8a8a8a" />
+    {/* Hangar door frame */}
+    <StaticBox position={[-60, 9, -62.5]} args={[55, 16, 0.5]} color="#666" />
+
+    {/* ── CONTROL TOWER ── */}
+    <StaticBox position={[-150, 12, 60]} args={[8, 24, 8]} color="#aaa" />
+    {/* Glass cab */}
+    <mesh position={[-150, 26, 60]}>
+      <boxGeometry args={[12, 5, 12]} />
+      <meshStandardMaterial color="#88aacc" metalness={0.1} roughness={0} transparent opacity={0.45} />
+    </mesh>
+    {/* Tower top beacon */}
+    <mesh position={[-150, 29.5, 60]}>
+      <sphereGeometry args={[0.4, 8, 8]} />
+      <meshStandardMaterial color="#ff2200" emissive="#ff2200" emissiveIntensity={3} />
+    </mesh>
+    <pointLight position={[-150, 29, 60]} color="#ff2200" intensity={4} distance={60} />
+
+    {/* ── WINDSOCK ── */}
+    <StaticBox position={[-180, 7, 30]} args={[0.22, 14, 0.22]} color="#333" />
+    <mesh position={[-180, 14.8, 31.5]} rotation={[0.5, 0, 0]} castShadow>
+      <coneGeometry args={[0.5, 2.0, 8]} />
+      <meshStandardMaterial color="#ff8800" />
+    </mesh>
+
+    {/* ── ALTITUDE GATE RINGS ── */}
+    {[
+      { pos: [50, 15, 0],  color: "#ffdd00" },
+      { pos: [130, 23, 0], color: "#ff8800" },
+      { pos: [210, 31, 0], color: "#ff4400" },
+    ].map(({ pos, color }, i) => (
+      <group key={`ag${i}`} position={pos}>
+        <mesh>
+          <torusGeometry args={[12, 0.65, 8, 28]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1} />
+        </mesh>
+        <pointLight color={color} intensity={4} distance={25} />
+      </group>
+    ))}
+
+    {/* ── RUNWAY END LIGHTS (east end) ── */}
+    {[-12, -8, -4, 0, 4, 8, 12].map((z, i) => (
+      <mesh key={`rel2_${i}`} position={[410, 0.3, z]}>
+        <sphereGeometry args={[0.2, 6, 6]} />
+        <meshStandardMaterial color="#ff2200" emissive="#ff2200" emissiveIntensity={5} />
+      </mesh>
+    ))}
   </>
 );
 

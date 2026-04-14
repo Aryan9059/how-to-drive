@@ -29,7 +29,7 @@ const Helicopter = ({
       args: [1.2],
       position: startPosition,
       rotation: startRotation,
-      linearDamping: 0.7,
+      linearDamping: 0.25,
       angularDamping: 0.99,
       allowSleep: false,
     }),
@@ -73,14 +73,14 @@ const Helicopter = ({
     if (k.KeyD) yaw.current -= delta * 1.8;
 
     // Cyclic pitch (forward/back tilt) → forward flight
-    const targetPitch = k.ArrowUp || k.KeyI ? -0.35
-      : k.ArrowDown || k.KeyK ? 0.2
+    const targetPitch = k.ArrowUp || k.KeyI ? -0.5
+      : k.ArrowDown || k.KeyK ? 0.35
       : 0;
     pitch.current += (targetPitch - pitch.current) * Math.min(1, delta * 5);
 
     // Cyclic roll (left/right tilt) → lateral flight
-    const targetRoll = k.ArrowLeft || k.KeyJ ? 0.3
-      : k.ArrowRight || k.KeyL ? -0.3
+    const targetRoll = k.ArrowLeft || k.KeyJ ? 0.45
+      : k.ArrowRight || k.KeyL ? -0.45
       : 0;
     roll.current += (targetRoll - roll.current) * Math.min(1, delta * 5);
 
@@ -112,7 +112,7 @@ const Helicopter = ({
     const rightX = Math.cos(yaw.current);
     const rightZ = -Math.sin(yaw.current);
 
-    const horizontalForce = 2800 * collective.current;
+    const horizontalForce = 8000 * Math.max(0.3, collective.current);
     bodyApi.applyForce([
       (fwdX * pitch.current + rightX * -roll.current) * horizontalForce,
       0,

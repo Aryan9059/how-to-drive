@@ -134,6 +134,48 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     );
   }
 
+  // ─── Bike Missions (new levels) ──────────────────────────────
+  if (lessonId === "bike3") {
+    return <Checkpoint position={[240, 1, 0]} radius={12} onTrigger={callPass} />;
+  }
+
+  if (lessonId === "bike4") {
+    return (
+      <Checkpoint
+        position={[0, 1, 30]}
+        radius={10}
+        onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 2) callPass(); }}
+      />
+    );
+  }
+
+  // ─── Plane Missions (new levels) ─────────────────────────────
+  if (lessonId === "plane3") {
+    return (
+      <>
+        <Checkpoint position={[0, 20, 0]}   radius={15} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 4) callPass(); }} />
+        <Checkpoint position={[80, 20, 0]}  radius={15} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 4) callPass(); }} />
+        <Checkpoint position={[160, 20, 0]} radius={15} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 4) callPass(); }} />
+        <Checkpoint position={[240, 20, 0]} radius={15} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 4) callPass(); }} />
+      </>
+    );
+  }
+
+  if (lessonId === "plane4") {
+    return (
+      <>
+        {[
+          [80, 20, 0], [160, 50, 0], [240, 35, 40],
+          [320, 60, -40], [380, 30, 0], [440, 20, 0],
+        ].map((pos, i) => (
+          <Checkpoint key={i} position={pos} radius={17} mode3D
+            onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 6) callPass(); }}
+          />
+        ))}
+      </>
+    );
+  }
+
   // ─── Helicopter Missions ─────────────────────────────────────
   if (lessonId === "heli1") {
     // Land on 3 helipads – use mode3D so altitude matters

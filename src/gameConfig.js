@@ -155,9 +155,9 @@ export const LESSONS = [
 export const BIKE_MISSIONS = [
   {
     id: "bike1",
-    title: "City Slalom",
+    title: "City Circuit",
     icon: Flag,
-    description: "Thread through urban cones on your motorbike without touching any.",
+    description: "Weave through urban traffic cones and tight chicanes on your sport bike.",
     objective: "Weave through all cones and reach the finish gate. Lean into corners!",
     controlsHint: "W = throttle, S = brake, A/D = steer. Speed affects lean. Space = rear brake.",
     easyHint: "Use W to go, A/D to steer. Slow down before cone sections.",
@@ -170,9 +170,9 @@ export const BIKE_MISSIONS = [
   },
   {
     id: "bike2",
-    title: "Mountain Run",
+    title: "Alpine Pass",
     icon: Mountain,
-    description: "Tackle winding mountain switchbacks on your motorbike.",
+    description: "Tackle winding mountain switchbacks and hit all 3 speed checkpoints.",
     objective: "Complete the mountain course, hitting all 3 speed checkpoints above 60 km/h.",
     controlsHint: "High-speed cornering needs smooth throttle control. Trail-brake into turns.",
     easyHint: "W = go, S = slow, A/D = steer. Keep speed above 60 through the gates.",
@@ -183,17 +183,47 @@ export const BIKE_MISSIONS = [
       training: "Enter corners wider, apex mid, exit wide. Look through the corner, not at the apex."
     }
   },
+  {
+    id: "bike3",
+    title: "Coastal Sprint",
+    icon: Flag,
+    description: "Race 500 m along a coastal highway with a chicane in the middle.",
+    objective: "Reach the finish line at the far end of the coastal road.",
+    controlsHint: "W = throttle, S = brake, A/D = steer. Build speed on the straight sections.",
+    easyHint: "Hold W to accelerate and steer through the chicane. Cross the finish arch.",
+    stars: { time: 45, mistakes: 2, hardBrakes: 4 },
+    briefing: {
+      ethics: "Coastal roads can be treacherous. Watch for gravel and cross-winds near the sea.",
+      knowledge: "High-speed stability on a bike requires smooth, measured inputs. Sudden movements cause wobble.",
+      training: "Use early braking to set up the chicane. Roll the throttle on as you exit each bend."
+    }
+  },
+  {
+    id: "bike4",
+    title: "Track Day",
+    icon: Trophy,
+    description: "Complete 2 laps of the oval circuit on your sport bike.",
+    objective: "Cross the start/finish line twice to complete 2 full laps.",
+    controlsHint: "W = throttle, S = brake, A/D = steer. Brake late into the banked corners.",
+    easyHint: "Follow the circuit around twice. Cross the start/finish line to count each lap.",
+    stars: { time: 120, mistakes: 1, hardBrakes: 6 },
+    briefing: {
+      ethics: "Track days require riders to respect circuit rules and other riders at all times.",
+      knowledge: "Banked corners allow higher cornering speeds as the banking converts lateral g-force to vertical.",
+      training: "Find the racing line: wide entry, late apex, wide exit. Consistent laps beat risky bursts of speed."
+    }
+  },
 ];
 
 // ─── Plane Missions ──────────────────────────────────────────────────────────
 export const PLANE_MISSIONS = [
   {
     id: "plane1",
-    title: "First Takeoff",
+    title: "Airfield Takeoff",
     icon: ArrowUpCircle,
     description: "Learn to taxi, accelerate down the runway and achieve lift-off.",
     objective: "Build speed on the runway, then climb through all 3 altitude gate rings.",
-    controlsHint: "W = throttle. Hold W until 80+ km/h, then SPACE to pitch up for takeoff. ↑↓ = pitch.",
+    controlsHint: "W = throttle. Hold W until 80+ km/h, then SPACE to pitch up for takeoff.",
     easyHint: "Hold W to go fast, then press SPACE to climb. Steer A/D to stay on course.",
     stars: { time: 90, mistakes: 0, hardBrakes: 10 },
     briefing: {
@@ -204,17 +234,47 @@ export const PLANE_MISSIONS = [
   },
   {
     id: "plane2",
-    title: "Aerial Gates",
+    title: "Mountain Gates",
     icon: Target,
-    description: "Navigate your plane through 5 aerial rings without crashing.",
+    description: "Navigate your plane through 5 aerial rings set among mountain terrain.",
     objective: "Fly through all 5 glowing gate rings in order at altitude.",
-    controlsHint: "Use ↑/↓ for pitch, A/D for bank-and-turn. SPACE = climb, Shift = dive. W = more throttle.",
+    controlsHint: "Use SPACE/Shift for pitch, A/D for bank-and-turn. W = more throttle.",
     easyHint: "Aim through each glowing ring. Use A/D to turn, SPACE to climb.",
     stars: { time: 120, mistakes: 0, hardBrakes: 10 },
     briefing: {
       ethics: "Air traffic restrictions exist for good reason. Restricted airspace protects populated areas.",
       knowledge: "Banking (rolling) the aircraft and pulling back simultaneously produces a coordinated turn.",
       training: "Plan your approach to each ring from far away. Sudden control inputs at high speed are dangerous."
+    }
+  },
+  {
+    id: "plane3",
+    title: "Canyon Flythrough",
+    icon: Crosshair,
+    description: "Fly low through a narrow canyon and hit all 4 inline gate rings.",
+    objective: "Fly through all 4 glowing canyon gate rings without hitting the walls.",
+    controlsHint: "Maintain altitude with SPACE. Use A/D to correct your heading. Keep throttle steady.",
+    easyHint: "Fly straight through the canyon. Each glowing ring you pass counts toward completion.",
+    stars: { time: 80, mistakes: 0, hardBrakes: 10 },
+    briefing: {
+      ethics: "Low-level flying is strictly regulated. Canyon flying is only permitted in designated areas.",
+      knowledge: "Ground effect gives extra lift close to the ground, helping maintain altitude at lower speeds.",
+      training: "Enter the canyon at a steady altitude and throttle. Avoid large pitch changes — there is no room to recover."
+    }
+  },
+  {
+    id: "plane4",
+    title: "Aerobatics Challenge",
+    icon: Navigation,
+    description: "Fly through 6 rings arranged in a complex 3-D aerobatics course.",
+    objective: "Fly through all 6 glowing aerobatics rings in order.",
+    controlsHint: "SPACE = climb, Shift = dive, A/D = bank-and-turn. Combine inputs for 3-D manoeuvres.",
+    easyHint: "Follow each numbered ring in sequence. Use SPACE to climb and Shift to dive.",
+    stars: { time: 150, mistakes: 0, hardBrakes: 10 },
+    briefing: {
+      ethics: "Aerobatics require dedicated airspace clearance and trained pilots. Never attempt near populated areas.",
+      knowledge: "Aerobatic manoeuvres exploit all three axes of aircraft motion simultaneously.",
+      training: "Look ahead to plan the next gate while flying the current one. Rushing leads to missed rings."
     }
   },
 ];
@@ -287,11 +347,15 @@ export const TRACK_CAR_STARTS = {
 export const BIKE_STARTS = {
   bike1: { position: [-15, 1.5, -3], rotation: [0, Math.PI / 2, 0] },
   bike2: { position: [-15, 1.5, -3], rotation: [0, Math.PI / 2, 0] },
+  bike3: { position: [-240, 1.5, 0],  rotation: [0, Math.PI / 2, 0] },
+  bike4: { position: [-20, 1.5, 10],  rotation: [0, Math.PI / 2, 0] },
 };
 
 export const PLANE_STARTS = {
-  plane1: { position: [-90, 1, 0], rotation: [0, Math.PI / 2, 0] },
+  plane1: { position: [-90, 1, 0],  rotation: [0, Math.PI / 2, 0] },
   plane2: { position: [-180, 1, 0], rotation: [0, Math.PI / 2, 0] },
+  plane3: { position: [-200, 8, 0], rotation: [0, Math.PI / 2, 0] },
+  plane4: { position: [0, 10, 0],   rotation: [0, Math.PI / 2, 0] },
 };
 
 export const HELICOPTER_STARTS = {

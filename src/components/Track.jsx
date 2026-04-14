@@ -10,8 +10,12 @@ import TrackLesson8 from "./TrackLesson8";
 import TrackLesson9 from "./TrackLesson9";
 import TrackBike1 from "./TrackBike1";
 import TrackBike2 from "./TrackBike2";
+import TrackBike3 from "./TrackBike3";
+import TrackBike4 from "./TrackBike4";
 import TrackPlane1 from "./TrackPlane1";
 import TrackPlane2 from "./TrackPlane2";
+import TrackPlane3 from "./TrackPlane3";
+import TrackPlane4 from "./TrackPlane4";
 import TrackHelicopter1 from "./TrackHelicopter1";
 import TrackHelicopter2 from "./TrackHelicopter2";
 
@@ -30,9 +34,13 @@ const Track = ({ levelId = "lesson1" }) => {
     // Bike missions
     case "bike1":   return <TrackBike1 />;
     case "bike2":   return <TrackBike2 />;
+    case "bike3":   return <TrackBike3 />;
+    case "bike4":   return <TrackBike4 />;
     // Plane missions
     case "plane1":  return <TrackPlane1 />;
     case "plane2":  return <TrackPlane2 />;
+    case "plane3":  return <TrackPlane3 />;
+    case "plane4":  return <TrackPlane4 />;
     // Helicopter missions
     case "heli1":   return <TrackHelicopter1 />;
     case "heli2":   return <TrackHelicopter2 />;
