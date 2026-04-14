@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import simStore from "../simStore";
-import { GEAR_NAMES, ENGINE_CONFIG, LESSONS } from "../gameConfig";
+import { GEAR_NAMES, ENGINE_CONFIG, LESSONS, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
 import TouchControls from "./TouchControls";
+
+const allMissions = [...LESSONS, ...BIKE_MISSIONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
 
 const Gauge = ({ value, max, color, label, unit, redline }) => {
   const r = 48;
@@ -64,7 +66,7 @@ const EngineLight = ({ state }) => {
 const isTouchDevice = () =>
   typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
-const SimHUD = ({ lessonId, mode }) => {
+const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
   const [tel, setTel] = useState({ ...simStore });
 
   useEffect(() => {
@@ -84,9 +86,69 @@ const SimHUD = ({ lessonId, mode }) => {
     }
   }, [tel.headlightsOn, prevLights]);
 
-  const lesson = lessonId ? LESSONS.find((l) => l.id === lessonId) : null;
+  const lesson = lessonId ? allMissions.find((l) => l.id === lessonId) : null;
   const gearName = GEAR_NAMES[tel.gear] ?? "N";
   const touch = isTouchDevice();
+
+  // Vehicle-specific track name
+  const getTrackName = () => {
+    switch (vehicleType) {
+      case "bike": return "Bike Track";
+      case "plane": return "Airfield";
+      case "helicopter": return "Heliport";
+      default: return "Stunt Track";
+    }
+  };
+
+  // Vehicle emoji for badge
+  const vehicleEmoji = { car: "🚗", bike: "🏍️", plane: "✈️", helicopter: "🚁" }[vehicleType] || "🚗";
+
+  // Vehicle-specific key hints
+  const getKeyHints = () => {
+    switch (vehicleType) {
+      case "bike":
+        return [
+          ["W/S", "Throttle/Brake"],
+          ["A/D", "Steer/Lean"],
+          ["SPACE", "Rear Brake"],
+          ["V", "Camera"],
+          ["R", "Reset"],
+        ];
+      case "plane":
+        return [
+          ["W", "Throttle ▲"],
+          ["S", "Throttle ▼"],
+          ["A/D", "Bank L/R"],
+          ["SPACE", "Pitch Up"],
+          ["Shift", "Pitch Down"],
+          ["↑↓", "Pitch"],
+          ["R", "Reset"],
+        ];
+      case "helicopter":
+        return [
+          ["W", "CLIMB ▲"],
+          ["S", "DESCEND ▼"],
+          ["A/D", "Yaw L/R"],
+          ["↑↓", "Fwd/Back"],
+          ["←→", "Strafe L/R"],
+          ["R", "Reset"],
+        ];
+      default:
+        return [
+          ["I", "Ignition"],
+          ["W/S", "Throttle/Brake"],
+          ["E/Q", "Gear ▲/▼"],
+          ["C", "Clutch"],
+          ["SPACE", "Handbrake"],
+          ["H", "Headlights"],
+          ["F", "Horn"],
+          ["V", "Camera"],
+        ];
+    }
+  };
+
+  // For aircraft: show altitude instead of RPM
+  const isAerial = vehicleType === "plane" || vehicleType === "helicopter";
 
   return (
     <>
@@ -98,19 +160,29 @@ const SimHUD = ({ lessonId, mode }) => {
         )}
 
         <div className="simhud-badge">
+          <span className="simhud-vehicle-emoji">{vehicleEmoji}</span>
           {mode === "lesson" && lesson ? (
             <>
-              <span className="simhud-lv">L{LESSONS.indexOf(lesson) + 1}</span>
+              <span className="simhud-lv">L{allMissions.indexOf(lesson) + 1}</span>
               <span className="simhud-name">{lesson.title}</span>
             </>
           ) : (
-            <span className="simhud-name">Stunt Track</span>
+            <span className="simhud-name">{getTrackName()}</span>
           )}
         </div>
 
         {lesson && (
           <div className="simhud-objective">
             🎯 {lesson.objective}
+          </div>
+        )}
+
+        {/* Altitude indicator for aerial vehicles */}
+        {isAerial && (
+          <div className="simhud-altitude">
+            <span className="altitude-icon">▲</span>
+            <span className="altitude-val">{Math.max(0, Math.round(tel.altitude || 0))} m</span>
+            <span className="altitude-lbl">ALT</span>
           </div>
         )}
 
@@ -124,42 +196,69 @@ const SimHUD = ({ lessonId, mode }) => {
 
         {!touch && (
           <div className="simhud-panel">
-            <Gauge
-              value={tel.rpm / 20}
-              max={ENGINE_CONFIG.maxRpm / 20}
-              color="#6366f1"
-              label="RPM"
-              unit=""
-              redline={ENGINE_CONFIG.redlineRpm / 20}
-            />
+            {isAerial ? (
+              <>
+                <Gauge
+                  value={tel.rpm}
+                  max={8000}
+                  color={vehicleType === "plane" ? "#22d3ee" : "#34d399"}
+                  label={vehicleType === "plane" ? "THROTTLE" : "COLLECTIVE"}
+                  unit="%"
+                  redline={null}
+                />
+                <div className="gear-display">
+                  <div className="gear-digit" style={{ fontSize: '1.2rem' }}>
+                    {vehicleType === "plane" ? "✈" : "🚁"}
+                  </div>
+                  <div className="gear-label">MODE</div>
+                  <EngineLight state={tel.engineState} />
+                </div>
+                <Gauge
+                  value={tel.speed}
+                  max={vehicleType === "plane" ? 400 : 150}
+                  color="#22d3ee"
+                  label="SPEED"
+                  unit="km/h"
+                />
+              </>
+            ) : (
+              <>
+                <Gauge
+                  value={tel.rpm / 20}
+                  max={ENGINE_CONFIG.maxRpm / 20}
+                  color={vehicleType === "bike" ? "#f59e0b" : "#6366f1"}
+                  label="RPM"
+                  unit=""
+                  redline={ENGINE_CONFIG.redlineRpm / 20}
+                />
 
-            <div className="gear-display">
-              <div className="gear-digit">{gearName}</div>
-              <div className="gear-label">GEAR</div>
-              <EngineLight state={tel.engineState} />
-              <ShiftIndicator rpm={tel.rpm} />
-            </div>
+                <div className="gear-display">
+                  <div className="gear-digit">{gearName}</div>
+                  <div className="gear-label">GEAR</div>
+                  <EngineLight state={tel.engineState} />
+                  {vehicleType === "car" && <ShiftIndicator rpm={tel.rpm} />}
+                </div>
 
-            <Gauge
-              value={tel.speed}
-              max={200}
-              color="#22d3ee"
-              label="SPEED"
-              unit="km/h"
-            />
+                <Gauge
+                  value={tel.speed}
+                  max={vehicleType === "bike" ? 250 : 200}
+                  color="#22d3ee"
+                  label="SPEED"
+                  unit="km/h"
+                />
+              </>
+            )}
           </div>
         )}
 
         {!touch && (
           <div className="simhud-keys">
-            <div className="key-row"><kbd className="hud-key">I</kbd><span>Ignition</span></div>
-            <div className="key-row"><kbd className="hud-key">W/S</kbd><span>Throttle/Brake</span></div>
-            <div className="key-row"><kbd className="hud-key">E/Q</kbd><span>Gear ▲/▼</span></div>
-            <div className="key-row"><kbd className="hud-key">C</kbd><span>Clutch</span></div>
-            <div className="key-row"><kbd className="hud-key">SPACE</kbd><span>Handbrake</span></div>
-            <div className="key-row"><kbd className="hud-key">H</kbd><span>Headlights</span></div>
-            <div className="key-row"><kbd className="hud-key">F</kbd><span>Horn</span></div>
-            <div className="key-row"><kbd className="hud-key">V</kbd><span>Camera</span></div>
+            {getKeyHints().map(([k, l]) => (
+              <div key={k} className="key-row">
+                <kbd className="hud-key">{k}</kbd>
+                <span>{l}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>

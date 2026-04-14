@@ -1,27 +1,44 @@
-import { LESSONS } from "../gameConfig";
+import { LESSONS, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
 import simStore from "../simStore";
 import { Trophy, XCircle, Lightbulb, Target, Clock, AlertTriangle, Octagon, Play, ArrowLeft, RotateCcw, Check, X, ShieldCheck, Cpu, Zap } from 'lucide-react';
+
+const allMissions = [...LESSONS, ...BIKE_MISSIONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
+
+const getMissionsForVehicle = (vehicleType) => {
+  switch (vehicleType) {
+    case "bike": return BIKE_MISSIONS;
+    case "plane": return PLANE_MISSIONS;
+    case "helicopter": return HELICOPTER_MISSIONS;
+    default: return LESSONS;
+  }
+};
+
+const vehicleLabel = { car: "LESSON", bike: "BIKE MISSION", plane: "FLIGHT MISSION", helicopter: "HELI MISSION" };
+const vehicleReadyLabel = { car: "I'm Ready, Let's Drive!", bike: "Let's Ride!", plane: "Cleared for Takeoff!", helicopter: "Ready to Lift Off!" };
 
 const LessonOverlay = ({
   phase,
   lessonId,
   difficulty,
+  vehicleType = "car",
   onStart,
   onBriefingComplete,
   onRetry,
   onNext,
   onMenu,
 }) => {
-  const lesson = LESSONS.find((l) => l.id === lessonId);
-  const lessonIdx = LESSONS.indexOf(lesson);
+  const missions = getMissionsForVehicle(vehicleType);
+  const lesson = allMissions.find((l) => l.id === lessonId);
+  const lessonIdx = missions.indexOf(lesson);
   const hint = difficulty === "easy" ? lesson?.easyHint : lesson?.controlsHint;
+  const missionLabel = vehicleLabel[vehicleType] || "LESSON";
 
   if (phase === "intro") {
     return (
       <div className="overlay-bg overlay-fadein">
         <div className="overlay-card">
           <div className="overlay-icon">{lesson && <lesson.icon size={48} />}</div>
-          <p className="overlay-eyebrow">LESSON {lessonIdx + 1} OF {LESSONS.length}</p>
+          <p className="overlay-eyebrow">{missionLabel} {lessonIdx + 1} OF {missions.length}</p>
           <h2 className="overlay-title">{lesson?.title}</h2>
           <p className="overlay-desc">{lesson?.description}</p>
           <div className="overlay-hint">
@@ -33,7 +50,7 @@ const LessonOverlay = ({
             <p>{lesson?.objective}</p>
           </div>
           <div className="overlay-actions">
-            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onStart}><Play size={18} fill="currentColor"/> Start Lesson</button>
+            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onStart}><Play size={18} fill="currentColor"/> Start Mission</button>
             <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><ArrowLeft size={18}/> Menu</button>
           </div>
         </div>
@@ -48,14 +65,14 @@ const LessonOverlay = ({
           <div className="overlay-icon shadow-pulse">
             <ShieldCheck size={48} color="#60a5fa" />
           </div>
-          <p className="overlay-eyebrow">DRIVER TRAINING BRIEFING</p>
+          <p className="overlay-eyebrow">TRAINING BRIEFING</p>
           <h2 className="overlay-title">{lesson?.title}</h2>
           
           <div className="briefing-grid">
             <div className="briefing-item">
               <div className="briefing-header">
                 <ShieldCheck size={20} className="text-blue" />
-                <span>Road Ethics</span>
+                <span>Ethics &amp; Safety</span>
               </div>
               <p>{lesson?.briefing?.ethics}</p>
             </div>
@@ -71,7 +88,7 @@ const LessonOverlay = ({
             <div className="briefing-item">
               <div className="briefing-header">
                 <Zap size={20} className="text-yellow" />
-                <span>Safety Training</span>
+                <span>Training Tips</span>
               </div>
               <p>{lesson?.briefing?.training}</p>
             </div>
@@ -79,7 +96,7 @@ const LessonOverlay = ({
 
           <div className="overlay-actions" style={{ marginTop: '30px' }}>
             <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', width: '100%' }} onClick={onBriefingComplete}>
-              <Play size={18} fill="currentColor" /> I'm Ready, Let's Drive!
+              <Play size={18} fill="currentColor" /> {vehicleReadyLabel[vehicleType] || "Let's Go!"}
             </button>
           </div>
         </div>
@@ -88,7 +105,7 @@ const LessonOverlay = ({
   }
 
   if (phase === "passed") {
-    const isLast = lessonIdx === LESSONS.length - 1;
+    const isLast = lessonIdx === missions.length - 1;
 
     const timeTaken = ((simStore.metrics.endTime - simStore.metrics.startTime) / 1000).toFixed(1);
     const { mistakes, hardBrakes } = simStore.metrics;
@@ -103,7 +120,7 @@ const LessonOverlay = ({
       <div className="overlay-bg overlay-fadein">
         <div className="overlay-card overlay-card--pass">
           <div className="overlay-icon"><Trophy size={48} color="#a3e635" /></div>
-          <p className="overlay-eyebrow">LESSON COMPLETE</p>
+          <p className="overlay-eyebrow">MISSION COMPLETE</p>
           <h2 className="overlay-title overlay-title--pass">
             {"★".repeat(totalStars)}{"☆".repeat(3 - totalStars)}
           </h2>
@@ -111,11 +128,11 @@ const LessonOverlay = ({
           <div className="overlay-hint" style={{ marginTop: '10px' }}>
             <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Clock size={16} /> Time: <strong>{timeTaken}s</strong> / {criteria.time}s {starTime ? <Check color="#a3e635" size={18} /> : <X color="#f87171" size={18} />}</p>
             <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><AlertTriangle size={16} /> Mistakes: <strong>{mistakes}</strong> / {criteria.mistakes} allowed {starMistake ? <Check color="#a3e635" size={18} /> : <X color="#f87171" size={18} />}</p>
-            <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Octagon size={16} /> Hard Brakes: <strong>{hardBrakes}</strong> / {criteria.hardBrakes} allowed {starSmooth ? <Check color="#a3e635" size={18} /> : <X color="#f87171" size={18} />}</p>
+            <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Octagon size={16} /> Hard Stops: <strong>{hardBrakes}</strong> / {criteria.hardBrakes} allowed {starSmooth ? <Check color="#a3e635" size={18} /> : <X color="#f87171" size={18} />}</p>
           </div>
 
           <div className="overlay-actions">
-            {!isLast && <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onNext}>Next Lesson <Play size={18} fill="currentColor" /></button>}
+            {!isLast && <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onNext}>Next Mission <Play size={18} fill="currentColor" /></button>}
             {isLast && <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><Trophy size={18}/> Back to Menu</button>}
             <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onRetry}><RotateCcw size={18}/> Retry to Improve</button>
           </div>
@@ -137,7 +154,7 @@ const LessonOverlay = ({
             <p>{hint}</p>
           </div>
           <div className="overlay-actions">
-            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onRetry}><RotateCcw size={18}/> Retry Lesson</button>
+            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onRetry}><RotateCcw size={18}/> Retry Mission</button>
             <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><ArrowLeft size={18}/> Menu</button>
           </div>
         </div>

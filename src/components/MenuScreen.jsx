@@ -1,6 +1,21 @@
 import { useState } from "react";
-import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY } from "../gameConfig";
-import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass, Play, ChevronLeft, Car, Volume2, VolumeX } from 'lucide-react';
+import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS, VEHICLE_CATEGORIES } from "../gameConfig";
+import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass, Play, ChevronLeft, Car, Volume2, VolumeX, Plane, Wind, Navigation } from 'lucide-react';
+
+// Vehicle icon resolver
+const VehicleIcon = ({ id, size = 28 }) => {
+  const map = { car: "🚗", bike: "🏍️", plane: "✈️", helicopter: "🚁" };
+  return <span style={{ fontSize: size, lineHeight: 1 }}>{map[id] || "🚗"}</span>;
+};
+
+const getMissionsForVehicle = (vehicleId) => {
+  switch (vehicleId) {
+    case "bike": return BIKE_MISSIONS;
+    case "plane": return PLANE_MISSIONS;
+    case "helicopter": return HELICOPTER_MISSIONS;
+    default: return LESSONS;
+  }
+};
 
 const MenuScreen = ({
   menuStep,
@@ -14,11 +29,13 @@ const MenuScreen = ({
   onToggleMusic,
 }) => {
   const [selectedTod, setSelectedTod] = useState("day");
+  const [selectedVehicle, setSelectedVehicle] = useState("car");
 
-  const isUnlocked = (idx) => {
+  const isUnlocked = (idx, vehicleId) => {
     if (idx === 0) return true;
-    const prevLesson = LESSONS[idx - 1];
-    return completedLessons[prevLesson.id] !== undefined;
+    const missions = getMissionsForVehicle(vehicleId);
+    const prevMission = missions[idx - 1];
+    return completedLessons[prevMission.id] !== undefined;
   };
 
   const renderSplash = () => (
@@ -77,6 +94,23 @@ const MenuScreen = ({
     </div>
   );
 
+  const currentMissions = getMissionsForVehicle(selectedVehicle);
+  const vehicleCategory = VEHICLE_CATEGORIES.find(v => v.id === selectedVehicle);
+
+  // Controls hints per vehicle
+  const getControlsHints = () => {
+    switch (selectedVehicle) {
+      case "bike":
+        return [["W", "Throttle"], ["S", "Brake"], ["A/D", "Steer/Lean"], ["SPACE", "Rear Brake"], ["R", "Reset"], ["V", "Camera"], ["ESC", "Menu"]];
+      case "plane":
+        return [["W", "Throttle"], ["S", "Throttle ▼"], ["A/D", "Bank L/R"], ["SPACE", "Pitch Up"], ["Shift", "Pitch Down"], ["↑↓", "Pitch"], ["R", "Reset"], ["ESC", "Menu"]];
+      case "helicopter":
+        return [["W", "Climb"], ["S", "Descend"], ["A/D", "Yaw L/R"], ["↑", "Fly Forward"], ["↓", "Fly Back"], ["←/→", "Strafe"], ["R", "Reset"], ["ESC", "Menu"]];
+      default:
+        return [["I", "Ignition"], ["W/S", "Drive/Brake"], ["E/Q", "Gear ▲/▼"], ["C", "Clutch"], ["SPACE", "Handbrake"], ["H", "Headlights"], ["F", "Horn"], ["R", "Reset"], ["V", "Camera"], ["ESC", "Menu"]];
+    }
+  };
+
   return (
     <div className={`menu-root ${menuStep === 'splash' ? 'menu-root--splash' : ''}`}>
       <div className="menu-bg-grid" />
@@ -106,6 +140,28 @@ const MenuScreen = ({
                 {menuStep === "missions" ? <>Drive <span className="menu-title-accent">Missions</span></> : <>Free <span className="menu-title-accent">Roam</span></>}
               </h1>
             </header>
+
+            {/* Vehicle category tabs — only in missions */}
+            {menuStep === "missions" && (
+              <div className="vehicle-tabs">
+                {VEHICLE_CATEGORIES.map((v) => (
+                  <button
+                    key={v.id}
+                    className={`vehicle-tab ${selectedVehicle === v.id ? "vehicle-tab--active" : ""}`}
+                    style={{ "--vtab-color": v.color }}
+                    onClick={() => setSelectedVehicle(v.id)}
+                  >
+                    <span className="vehicle-tab-emoji">{v.emoji}</span>
+                    <span className="vehicle-tab-label">{v.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Vehicle description */}
+            {menuStep === "missions" && vehicleCategory && (
+              <p className="vehicle-desc">{vehicleCategory.description}</p>
+            )}
 
             <div className="diff-toggle">
               <span className="diff-label">Mode:</span>
@@ -137,22 +193,22 @@ const MenuScreen = ({
 
             <div className="level-grid">
               {menuStep === "missions" ? (
-                LESSONS.map((lesson, idx) => {
-                  const unlocked = isUnlocked(idx);
-                  const stars = completedLessons[lesson.id];
+                currentMissions.map((mission, idx) => {
+                  const unlocked = isUnlocked(idx, selectedVehicle);
+                  const stars = completedLessons[mission.id];
                   const done = stars !== undefined;
                   return (
                     <button
-                      key={lesson.id}
+                      key={mission.id}
                       className={`level-card ${!unlocked ? "level-card--locked" : ""}`}
-                      onClick={() => unlocked && onStartLesson(lesson.id, difficulty, selectedTod)}
+                      onClick={() => unlocked && onStartLesson(mission.id, difficulty, selectedTod, selectedVehicle)}
                       disabled={!unlocked}
                     >
                       <div className="level-card-num">{String(idx + 1).padStart(2, "0")}</div>
-                      <div className="level-card-icon">{unlocked ? <lesson.icon size={32} /> : <Lock size={32} opacity={0.5} />}</div>
+                      <div className="level-card-icon">{unlocked ? <mission.icon size={32} /> : <Lock size={32} opacity={0.5} />}</div>
                       <div className="level-card-info">
-                        <h3 className="level-card-name">{lesson.title}</h3>
-                        <p className="level-card-desc">{lesson.description}</p>
+                        <h3 className="level-card-name">{mission.title}</h3>
+                        <p className="level-card-desc">{mission.description}</p>
                       </div>
                       {done && (
                         <span className="done-badge">
@@ -186,7 +242,7 @@ const MenuScreen = ({
 
         {menuStep !== "splash" && (
           <footer className="menu-controls">
-            {[["I", "Ignition"], ["W/S", "Drive/Brake"], ["E/Q", "Gear ▲/▼"], ["C", "Clutch"], ["SPACE", "Handbrake"], ["H", "Headlights"], ["F", "Horn"], ["R", "Reset"], ["V", "Camera"], ["ESC", "Menu"]].map(([k, l]) => (
+            {getControlsHints().map(([k, l]) => (
               <div key={k} className="ctrl-item">
                 <kbd className="ctrl-key">{k}</kbd>
                 <span className="ctrl-label">{l}</span>

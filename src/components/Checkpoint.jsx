@@ -1,7 +1,26 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 
-const Checkpoint = ({ position, radius = 3, label = "", onTrigger, requireStop = false, requiredSpeed = 1.0 }) => {
+/**
+ * Checkpoint – works in both ground (XZ) and aerial (3D) modes.
+ * 
+ * Props:
+ *  - position: [x,y,z]
+ *  - radius: trigger radius
+ *  - mode3D: if true, checks full 3D sphere distance (for aerial vehicles)
+ *  - requireStop: if true, also requires speed ≤ requiredSpeed
+ *  - requiredSpeed: threshold for requireStop
+ *  - onTrigger: callback when triggered
+ */
+const Checkpoint = ({
+  position,
+  radius = 3,
+  label = "",
+  onTrigger,
+  requireStop = false,
+  requiredSpeed = 1.0,
+  mode3D = false,
+}) => {
   const ringRef = useRef();
   const triggered = useRef(false);
 
@@ -10,12 +29,17 @@ const Checkpoint = ({ position, radius = 3, label = "", onTrigger, requireStop =
     ringRef.current.rotation.y = clock.getElapsedTime() * 0.6;
 
     const [cx, cy, cz] = position;
-    const [px, , pz] = window._simPos || [0, 0, 0];
+    const [px, py, pz] = window._simPos || [0, 0, 0];
     const speed = window._simSpeed || 0;
-    
-    const dist = Math.sqrt((px - cx) ** 2 + (pz - cz) ** 2);
-    const inside = dist < radius;
 
+    let dist;
+    if (mode3D) {
+      dist = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2 + (pz - cz) ** 2);
+    } else {
+      dist = Math.sqrt((px - cx) ** 2 + (pz - cz) ** 2);
+    }
+
+    const inside = dist < radius;
     const meetsSpeed = requireStop ? speed <= requiredSpeed : true;
     const readyToTrigger = inside && meetsSpeed;
 
@@ -40,12 +64,20 @@ const Checkpoint = ({ position, radius = 3, label = "", onTrigger, requireStop =
           opacity={0.9}
         />
       </mesh>
-      {[[-radius, 0, 0], [radius, 0, 0]].map(([x, y, z], i) => (
+      {/* Ground poles (shown in non-3D mode only) */}
+      {!mode3D && [[-radius, 0, 0], [radius, 0, 0]].map(([x, y, z], i) => (
         <mesh key={i} position={[x, 2, z]}>
           <cylinderGeometry args={[0.08, 0.08, 4, 8]} />
           <meshStandardMaterial color="#6366f1" emissive="#6366f1" emissiveIntensity={0.6} />
         </mesh>
       ))}
+      {/* Glow sphere for aerial checkpoints */}
+      {mode3D && (
+        <mesh>
+          <sphereGeometry args={[radius * 0.3, 12, 12]} />
+          <meshStandardMaterial color="#6366f1" emissive="#6366f1" emissiveIntensity={0.4} transparent opacity={0.3} />
+        </mesh>
+      )}
     </group>
   );
 };

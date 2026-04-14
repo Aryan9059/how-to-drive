@@ -8,7 +8,7 @@ import MenuScreen from "./components/MenuScreen";
 import SimHUD from "./components/SimHUD";
 import LessonOverlay from "./components/LessonOverlay";
 import BackgroundMusic from "./components/BackgroundMusic";
-import { LESSONS } from "./gameConfig";
+import { LESSONS, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "./gameConfig";
 import simStore from "./simStore";
 
 const loadCompleted = () => {
@@ -24,6 +24,15 @@ const saveCompleted = (obj) => {
   localStorage.setItem("completedLessons", JSON.stringify(obj));
 };
 
+const getLessonsForVehicle = (vehicleType) => {
+  switch (vehicleType) {
+    case "bike": return BIKE_MISSIONS;
+    case "plane": return PLANE_MISSIONS;
+    case "helicopter": return HELICOPTER_MISSIONS;
+    default: return LESSONS;
+  }
+};
+
 const App = () => {
   const [difficulty, setDifficulty] = useState("easy");
   const [completedLessons, setCompletedLessons] = useState(loadCompleted);
@@ -36,6 +45,7 @@ const App = () => {
   const [lessonPhase, setLessonPhase] = useState("intro");
   const [canvasKey, setCanvasKey] = useState(0);
   const [musicMuted, setMusicMuted] = useState(simStore.musicMuted);
+  const [vehicleType, setVehicleType] = useState("car"); // "car" | "bike" | "plane" | "helicopter"
 
   const goMenu = useCallback(() => {
     setGameMode("menu");
@@ -43,10 +53,11 @@ const App = () => {
     setLessonPhase("intro");
   }, []);
 
-  const startLesson = useCallback((lid, diff, tod = "day") => {
+  const startLesson = useCallback((lid, diff, tod = "day", vehicle = "car") => {
     setLessonId(lid);
     setDifficulty(diff);
     setTimeOfDay(tod);
+    setVehicleType(vehicle);
     setLessonPhase("intro");
     setCanvasKey((k) => k + 1);
     setGameMode("lesson");
@@ -56,6 +67,7 @@ const App = () => {
     setTrackId(tid);
     setDifficulty(diff);
     setTimeOfDay(tod);
+    setVehicleType("car"); // free roam is always car
     setCanvasKey((k) => k + 1);
     setGameMode("freeDrive");
   }, []);
@@ -66,11 +78,12 @@ const App = () => {
   }, []);
 
   const nextLesson = useCallback(() => {
-    const idx = LESSONS.findIndex((l) => l.id === lessonId);
-    const next = LESSONS[idx + 1];
-    if (next) startLesson(next.id, difficulty);
+    const lessons = getLessonsForVehicle(vehicleType);
+    const idx = lessons.findIndex((l) => l.id === lessonId);
+    const next = lessons[idx + 1];
+    if (next) startLesson(next.id, difficulty, timeOfDay, vehicleType);
     else goMenu();
-  }, [lessonId, difficulty, startLesson, goMenu]);
+  }, [lessonId, difficulty, timeOfDay, vehicleType, startLesson, goMenu]);
 
   useEffect(() => {
     if (lessonPhase === "active") {
@@ -89,8 +102,9 @@ const App = () => {
     simStore.metrics.endTime = performance.now();
     const timeTaken = (simStore.metrics.endTime - simStore.metrics.startTime) / 1000;
 
-    const lesson = LESSONS.find((l) => l.id === lessonId);
-    const criteria = lesson.stars || { time: 999, mistakes: 0, hardBrakes: 0 };
+    const lessons = getLessonsForVehicle(vehicleType);
+    const lesson = lessons.find((l) => l.id === lessonId);
+    const criteria = lesson?.stars || { time: 999, mistakes: 0, hardBrakes: 0 };
 
     const earnedStars =
       (timeTaken <= criteria.time ? 1 : 0) +
@@ -104,7 +118,7 @@ const App = () => {
       return next;
     });
     setLessonPhase("passed");
-  }, [lessonId]);
+  }, [lessonId, vehicleType]);
 
   const handleLessonFail = useCallback(() => {
     setLessonPhase("failed");
@@ -128,6 +142,12 @@ const App = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [gameMode, menuStep, goMenu]);
 
+  // Gravity per vehicle
+  const getGravity = () => {
+    if (vehicleType === "plane" || vehicleType === "helicopter") return [0, -9.82, 0];
+    return [0, -2.1, 0];
+  };
+
   return (
     <>
       <BackgroundMusic mode={gameMode} muted={musicMuted} />
@@ -149,13 +169,18 @@ const App = () => {
         />
       ) : (
         <>
-          <SimHUD lessonId={gameMode === "lesson" ? lessonId : null} mode={gameMode} />
+          <SimHUD
+            lessonId={gameMode === "lesson" ? lessonId : null}
+            mode={gameMode}
+            vehicleType={vehicleType}
+          />
 
           {gameMode === "lesson" && lessonPhase !== "active" && (
             <LessonOverlay
               phase={lessonPhase}
               lessonId={lessonId}
               difficulty={difficulty}
+              vehicleType={vehicleType}
               onStart={() => setLessonPhase("briefing")}
               onBriefingComplete={() => setLessonPhase("active")}
               onRetry={retryLesson}
@@ -165,13 +190,14 @@ const App = () => {
           )}
 
           <Canvas key={canvasKey} style={{ position: "fixed", inset: 0 }}>
-            <Physics broadphase="SAP" gravity={[0, -2.1, 0]}>
+            <Physics broadphase="SAP" gravity={getGravity()}>
               <Scene
                 mode={gameMode}
                 lessonId={lessonId}
                 trackId={trackId}
                 difficulty={difficulty}
                 timeOfDay={timeOfDay}
+                vehicleType={vehicleType}
                 onLessonPass={handleLessonPass}
                 onLessonFail={handleLessonFail}
               />
