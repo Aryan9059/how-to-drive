@@ -27,7 +27,7 @@ export const ENGINE_CONFIG = {
 
 
 
-// ─── Car Missions ───────────────────────────────────────────────────────────
+
 export const LESSONS = [
   {
     id: "lesson1",
@@ -151,71 +151,8 @@ export const LESSONS = [
   },
 ];
 
-// ─── Bike Missions ───────────────────────────────────────────────────────────
-export const BIKE_MISSIONS = [
-  {
-    id: "bike1",
-    title: "City Circuit",
-    icon: Flag,
-    description: "Weave through urban traffic cones and tight chicanes on your sport bike.",
-    objective: "Weave through all cones and reach the finish gate. Lean into corners!",
-    controlsHint: "W = throttle, S = brake, A/D = steer. Speed affects lean. Space = rear brake.",
-    easyHint: "Use W to go, A/D to steer. Slow down before cone sections.",
-    stars: { time: 60, mistakes: 2, hardBrakes: 5 },
-    briefing: {
-      ethics: "Motorcyclists are among the most vulnerable road users. Precision and caution save lives.",
-      knowledge: "Countersteering: push the right bar to turn right at speed. At low speed, turn bars normally.",
-      training: "Use body lean to initiate turns. Brake before corners, not in them."
-    }
-  },
-  {
-    id: "bike2",
-    title: "Alpine Pass",
-    icon: Mountain,
-    description: "Tackle winding mountain switchbacks and hit all 3 speed checkpoints.",
-    objective: "Complete the mountain course, hitting all 3 speed checkpoints above 60 km/h.",
-    controlsHint: "High-speed cornering needs smooth throttle control. Trail-brake into turns.",
-    easyHint: "W = go, S = slow, A/D = steer. Keep speed above 60 through the gates.",
-    stars: { time: 90, mistakes: 1, hardBrakes: 3 },
-    briefing: {
-      ethics: "Mountain roads claim many riders. Respect blind corners and always assume oncoming traffic.",
-      knowledge: "Weight transfer on a motorcycle is dramatic. Braking shifts weight forward, improving front grip but reducing rear traction.",
-      training: "Enter corners wider, apex mid, exit wide. Look through the corner, not at the apex."
-    }
-  },
-  {
-    id: "bike3",
-    title: "Coastal Sprint",
-    icon: Flag,
-    description: "Race 500 m along a coastal highway with a chicane in the middle.",
-    objective: "Reach the finish line at the far end of the coastal road.",
-    controlsHint: "W = throttle, S = brake, A/D = steer. Build speed on the straight sections.",
-    easyHint: "Hold W to accelerate and steer through the chicane. Cross the finish arch.",
-    stars: { time: 45, mistakes: 2, hardBrakes: 4 },
-    briefing: {
-      ethics: "Coastal roads can be treacherous. Watch for gravel and cross-winds near the sea.",
-      knowledge: "High-speed stability on a bike requires smooth, measured inputs. Sudden movements cause wobble.",
-      training: "Use early braking to set up the chicane. Roll the throttle on as you exit each bend."
-    }
-  },
-  {
-    id: "bike4",
-    title: "Track Day",
-    icon: Trophy,
-    description: "Complete 2 laps of the oval circuit on your sport bike.",
-    objective: "Cross the start/finish line twice to complete 2 full laps.",
-    controlsHint: "W = throttle, S = brake, A/D = steer. Brake late into the banked corners.",
-    easyHint: "Follow the circuit around twice. Cross the start/finish line to count each lap.",
-    stars: { time: 120, mistakes: 1, hardBrakes: 6 },
-    briefing: {
-      ethics: "Track days require riders to respect circuit rules and other riders at all times.",
-      knowledge: "Banked corners allow higher cornering speeds as the banking converts lateral g-force to vertical.",
-      training: "Find the racing line: wide entry, late apex, wide exit. Consistent laps beat risky bursts of speed."
-    }
-  },
-];
 
-// ─── Plane Missions ──────────────────────────────────────────────────────────
+
 export const PLANE_MISSIONS = [
   {
     id: "plane1",
@@ -279,7 +216,7 @@ export const PLANE_MISSIONS = [
   },
 ];
 
-// ─── Helicopter Missions ──────────────────────────────────────────────────────
+
 export const HELICOPTER_MISSIONS = [
   {
     id: "heli1",
@@ -313,7 +250,7 @@ export const HELICOPTER_MISSIONS = [
   },
 ];
 
-// ─── Free Roam ───────────────────────────────────────────────────────────────
+
 export const FREE_DRIVE_TRACKS = [
   { id: "track1", name: "Stunt Track", icon: Mountain, desc: "A high-octane playground featuring steep ramps, loops, and technical obstacles." },
 ];
@@ -325,7 +262,7 @@ export const TIME_OF_DAY = [
   { id: "night", label: "Night", icon: Moon },
 ];
 
-// ─── Start Positions ──────────────────────────────────────────────────────────
+
 export const LESSON_CAR_STARTS = {
   lesson1: { position: [-10, 1, -3], rotation: [0, Math.PI / 2, 0] },
   lesson2: { position: [-38, 1, -3], rotation: [0, Math.PI / 2, 0] },
@@ -344,12 +281,6 @@ export const TRACK_CAR_STARTS = {
   track1: { position: [-10, 3, -3], rotation: [0, Math.PI / 2, 0] },
 };
 
-export const BIKE_STARTS = {
-  bike1: { position: [-15, 1.5, -3], rotation: [0, Math.PI / 2, 0] },
-  bike2: { position: [-15, 1.5, -3], rotation: [0, Math.PI / 2, 0] },
-  bike3: { position: [-240, 1.5, 0],  rotation: [0, Math.PI / 2, 0] },
-  bike4: { position: [-20, 1.5, 10],  rotation: [0, Math.PI / 2, 0] },
-};
 
 export const PLANE_STARTS = {
   plane1: { position: [-90, 1, 0],  rotation: [0, Math.PI / 2, 0] },
@@ -363,7 +294,7 @@ export const HELICOPTER_STARTS = {
   heli2: { position: [-100, 5, -80], rotation: [0, 0, 0] },
 };
 
-// ─── Vehicle Category Info ───────────────────────────────────────────────────
+
 export const VEHICLE_CATEGORIES = [
   {
     id: "car",
@@ -371,17 +302,8 @@ export const VEHICLE_CATEGORIES = [
     emoji: "🚗",
     icon: "car",
     color: "#6366f1",
-    missions: null, // uses LESSONS
+    missions: null,
     description: "Master the road with manual & automatic car controls.",
-  },
-  {
-    id: "bike",
-    label: "Bike",
-    emoji: "🏍️",
-    icon: "bike",
-    color: "#f59e0b",
-    missions: "BIKE_MISSIONS",
-    description: "Feel the lean and thrill of motorcycle riding.",
   },
   {
     id: "plane",

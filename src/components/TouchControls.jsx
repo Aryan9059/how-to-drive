@@ -106,7 +106,7 @@ const TouchControls = ({ gear = 0, headlightsOn = false }) => {
   return (
     <div className="tc-root">
 
-      {/* LEFT SIDE: Handbrake & Gas/Brake Pedals */}
+      {}
       <div className="tc-left">
         <button
           className="tc-handbrake"
@@ -124,14 +124,14 @@ const TouchControls = ({ gear = 0, headlightsOn = false }) => {
         </div>
       </div>
 
-      {/* CENTER: Utility functions */}
+      {}
       <div className="tc-center">
         <TapButton label="ENGINE" icon={Key} keyCode="KeyI" color="#22c55e" />
         <TapButton label="LIGHTS" icon={Lightbulb} keyCode="KeyH" color="#f59e0b" />
         <TapButton label="HORN" icon={Volume2} keyCode="KeyF" color="#3b82f6" pulse />
       </div>
 
-      {/* RIGHT SIDE: Gear Shifter & Steering Buttons */}
+      {}
       <div className="tc-right">
         <GearShifter gear={gear} />
 

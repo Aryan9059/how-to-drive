@@ -30,7 +30,7 @@ html,
   transition: background 0.5s ease;
 }
 
-/* --- UPDATE THESE OVERLAY STYLES --- */
+
 .overlay-card {
   background: rgba(40, 10, 10, 0.6);
   backdrop-filter: blur(24px);
@@ -45,12 +45,12 @@ html,
   gap: 16px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
 
-  /* Fix for smaller screens/landscape modes to prevent cutoffs */
+  
   max-height: 85vh;
   overflow-y: auto;
 }
 
-/* Elegant scrollbar for overlays */
+
 .overlay-card::-webkit-scrollbar {
   width: 6px;
 }
@@ -81,9 +81,7 @@ html,
 }
 
 
-/* =========================================
-   MOBILE TOUCH CONTROLS
-   ========================================= */
+
 .tc-root {
   position: absolute;
   bottom: 20px;
@@ -106,7 +104,7 @@ html,
   gap: 10px;
 }
 
-/* Stacking children vertically and aligning to center block */
+
 .tc-left,
 .tc-right {
   flex-direction: column;
@@ -120,7 +118,7 @@ html,
   padding-bottom: 5px;
 }
 
-/* Pedals (Gas/Brake & Left/Right) */
+
 .tc-pedals {
   display: flex;
   gap: 15px;
@@ -128,7 +126,7 @@ html,
 
 .tc-pedal {
   width: 75px;
-  /* Square dimensions */
+  
   height: 75px;
   border-radius: 16px;
   background: rgba(0, 0, 0, 0.5);
@@ -161,7 +159,7 @@ html,
   letter-spacing: 0.05em;
 }
 
-/* Tap Buttons (Ignition, Lights, Horn) */
+
 .tc-tap {
   width: 55px;
   height: 55px;
@@ -200,10 +198,10 @@ html,
   }
 }
 
-/* Handbrake */
+
 .tc-handbrake {
   width: 165px;
-  /* Matches the width of the 2 pedals + gap below it */
+  
   height: 45px;
   border-radius: 12px;
   background: rgba(220, 38, 38, 0.4);
@@ -211,7 +209,7 @@ html,
   color: white;
   display: flex;
   flex-direction: row;
-  /* Horizontal layout for compact space */
+  
   align-items: center;
   justify-content: center;
   gap: 8px;
@@ -228,7 +226,7 @@ html,
   font-weight: bold;
 }
 
-/* Gear Shifter */
+
 .tc-gear-wrap {
   display: flex;
   align-items: center;
@@ -237,7 +235,7 @@ html,
   border-radius: 14px;
   padding: 8px;
   width: 165px;
-  /* Matches the width of the 2 steering buttons */
+  
   border: 2px solid #6366f1;
 }
 
@@ -1009,9 +1007,7 @@ kbd {
   z-index: 200;
 }
 
-/* =========================================
-   MOBILE MENU RESPONSIVENESS
-   ========================================= */
+
 @media (max-width: 768px),
 (max-height: 500px) {
 
@@ -1025,7 +1021,7 @@ kbd {
     gap: 20px;
   }
 
-  /* Make logo smaller on mobile */
+  
   .splash-content .menu-header div[style*="width: 140px"] {
     width: 90px !important;
     height: 90px !important;
@@ -1052,10 +1048,10 @@ kbd {
     font-size: 1.2rem;
   }
 
-  /* Mode selection grid */
+  
   .mode-grid {
     grid-template-columns: 1fr;
-    /* Stack vertically on mobile */
+    
     gap: 15px;
     padding: 0 10px;
   }
@@ -1063,7 +1059,7 @@ kbd {
   .mode-card {
     padding: 20px;
     flex-direction: row;
-    /* Horizontal layout for compact space */
+    
     text-align: left;
     gap: 15px;
   }
@@ -1083,7 +1079,7 @@ kbd {
     font-size: 0.8rem;
   }
 
-  /* Settings row (Difficulty & Time of Day) */
+  
   .diff-toggle,
   .tod-row {
     flex-wrap: wrap;
@@ -1100,7 +1096,7 @@ kbd {
     font-size: 0.75rem;
   }
 
-  /* Level Cards - Horizontal Scroll Box Style */
+  
   .level-grid {
     display: flex;
     flex-wrap: nowrap;
@@ -1121,11 +1117,11 @@ kbd {
   .level-card {
     flex: 0 0 200px;
     max-width: 200px;
-    height: 220px; /* Rigid height to prevent growing */
+    height: 220px; 
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 24px 15px 40px 15px; /* Extra bottom padding for badges */
+    padding: 24px 15px 40px 15px; 
     scroll-snap-align: center;
     background: rgba(255, 255, 255, 0.06);
     overflow: hidden;
@@ -1198,19 +1194,19 @@ kbd {
     padding: 2px 8px;
   }
 
-  /* Adjust back button positioning */
+  
   .menu-back-btn {
     top: 15px;
     left: 15px;
     padding: 8px 12px;
   }
 
-  /* Hide desktop keyboard controls on mobile */
+  
   .menu-controls {
     display: none;
   }
 
-  /* SimHUD adjustments for mobile layout */
+  
   .simhud-objective {
     top: 10px;
     padding: 8px 16px;
@@ -1367,7 +1363,7 @@ kbd {
   }
 }
 
-/* Driver Training Briefing Styles */
+
 .overlay-card--briefing {
   max-width: 650px !important;
   border-color: rgba(96, 165, 250, 0.4) !important;
@@ -1483,9 +1479,7 @@ kbd {
   }
 }
 
-/* =========================================
-   VEHICLE TABS (Missions Screen)
-   ========================================= */
+
 .vehicle-tabs {
   display: flex;
   gap: 10px;
@@ -1546,9 +1540,7 @@ kbd {
   font-style: italic;
 }
 
-/* =========================================
-   SIMHUD – VEHICLE EMOJI + ALTITUDE
-   ========================================= */
+
 .simhud-vehicle-emoji {
   font-size: 1.4rem;
   line-height: 1;

@@ -2,7 +2,6 @@ import { Environment, OrbitControls, PerspectiveCamera } from "@react-three/drei
 import { Debug, usePlane } from "@react-three/cannon";
 import { Suspense, useEffect, useRef, useState } from "react";
 import Car from "./Car";
-import Bike from "./Bike";
 import Plane from "./Plane";
 import Helicopter from "./Helicopter";
 import Ground from "./Ground";
@@ -10,7 +9,7 @@ import Track from "./Track";
 import BarrelContent from "./Barrel";
 import DynamicSky from "./DynamicSky";
 import LessonMonitor from "./LessonMonitor";
-import { LESSON_CAR_STARTS, TRACK_CAR_STARTS, BIKE_STARTS, PLANE_STARTS, HELICOPTER_STARTS } from "../gameConfig";
+import { LESSON_CAR_STARTS, TRACK_CAR_STARTS, PLANE_STARTS, HELICOPTER_STARTS } from "../gameConfig";
 
 const debug = false;
 
@@ -27,13 +26,12 @@ const Scene = ({
   const [cameraView, setView] = useState(1);
   const [cameraPos, setCameraPos] = useState([-21, 34, 55]);
 
-  // Compute vehicle start position
+
   const getStart = () => {
     if (mode === "freeDrive") {
       return TRACK_CAR_STARTS[trackId] || TRACK_CAR_STARTS.track1;
     }
     switch (vehicleType) {
-      case "bike":       return BIKE_STARTS[lessonId] || { position: [0, 2, 0], rotation: [0, Math.PI / 2, 0] };
       case "plane":      return PLANE_STARTS[lessonId] || { position: [-90, 1, 0], rotation: [0, Math.PI / 2, 0] };
       case "helicopter": return HELICOPTER_STARTS[lessonId] || { position: [0, 8, 0], rotation: [0, 0, 0] };
       default:           return LESSON_CAR_STARTS[lessonId] || LESSON_CAR_STARTS.lesson1;
@@ -68,26 +66,18 @@ const Scene = ({
     }
   };
 
-  // Aerial vehicles need higher FOV
+
   const getFOV = () => {
     if (vehicleType === "plane") return 70;
     if (vehicleType === "helicopter") return 60;
     return 40;
   };
 
-  // Show ground or physics plane
+
   const needsPhysicsGround = vehicleType === "plane" || vehicleType === "helicopter";
 
   const renderVehicle = () => {
     switch (vehicleType) {
-      case "bike":
-        return (
-          <Bike
-            cameraView={cameraView}
-            startPosition={carStart.position}
-            startRotation={carStart.rotation}
-          />
-        );
       case "plane":
         return (
           <Plane
@@ -130,7 +120,7 @@ const Scene = ({
 
       {renderVehicle()}
 
-      {/* Ground — aerial vehicles use a thinner physics plane so they can land */}
+      {}
       {activeTrack === "track1" ? <Ground /> : <PhysicsGround />}
       <Track levelId={activeTrack} />
       {activeTrack === "track1" && <BarrelContent />}

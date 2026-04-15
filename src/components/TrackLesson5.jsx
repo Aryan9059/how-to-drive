@@ -47,7 +47,7 @@ const TrackLesson5 = () => (
       <meshStandardMaterial color="#2c2c2c" roughness={0.9} />
     </mesh>
 
-    {/* Moved parking bays to x=45 start */}
+    {}
     {[0, 1, 2, 3, 4, 5].map(i => (
       <group key={`bay-${i}`}>
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[45 + i * 5.5, 0.02, 8]}>

@@ -33,25 +33,25 @@ const DynamicSky = ({ timeOfDay = "day" }) => {
 
   return (
     <>
-      <Sky 
-        distance={450000} 
-        sunPosition={sunPos} 
+      <Sky
+        distance={450000}
+        sunPosition={sunPos}
         turbidity={config.turbidity}
         rayleigh={config.rayleigh}
         mieCoefficient={config.mieCoefficient}
         mieDirectionalG={0.8}
       />
-      
+
       {timeOfDay === "night" && (
         <>
           <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
           <mesh ref={moonRef} position={[0, 100, -100]}>
             <sphereGeometry args={[8, 32, 32]} />
-            <meshStandardMaterial 
-              color="#fffcf0" 
-              emissive="#fffcf0" 
-              emissiveIntensity={1.5} 
-              roughness={0.5} 
+            <meshStandardMaterial
+              color="#fffcf0"
+              emissive="#fffcf0"
+              emissiveIntensity={1.5}
+              roughness={0.5}
             />
           </mesh>
           <pointLight position={[0, 90, -90]} intensity={1.5} color="#fff" distance={300} />
@@ -60,22 +60,22 @@ const DynamicSky = ({ timeOfDay = "day" }) => {
 
       {(timeOfDay === "day" || timeOfDay === "dawn" || timeOfDay === "dusk") && (
         <Clouds material={THREE.MeshLambertMaterial} limit={400}>
-          <Cloud 
-            segments={20} 
-            bounds={[100, 20, 100]} 
-            volume={10} 
+          <Cloud
+            segments={20}
+            bounds={[100, 20, 100]}
+            volume={10}
             color={timeOfDay === "day" ? "#fff" : "#ffccaa"}
-            position={[0, 100, 0]} 
+            position={[0, 100, 0]}
             opacity={timeOfDay === "day" ? 0.6 : 0.8}
             seed={10}
             speed={0.2}
           />
-          <Cloud 
-            segments={20} 
-            bounds={[100, 20, 100]} 
-            volume={10} 
+          <Cloud
+            segments={20}
+            bounds={[100, 20, 100]}
+            volume={10}
             color={timeOfDay === "day" ? "#fff" : "#ffaa88"}
-            position={[-200, 80, -200]} 
+            position={[-200, 80, -200]}
             opacity={timeOfDay === "day" ? 0.4 : 0.6}
             seed={20}
             speed={0.1}

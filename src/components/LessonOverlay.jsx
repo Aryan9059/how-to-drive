@@ -1,20 +1,19 @@
-import { LESSONS, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
+import { LESSONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
 import simStore from "../simStore";
 import { Trophy, XCircle, Lightbulb, Target, Clock, AlertTriangle, Octagon, Play, ArrowLeft, RotateCcw, Check, X, ShieldCheck, Cpu, Zap } from 'lucide-react';
 
-const allMissions = [...LESSONS, ...BIKE_MISSIONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
+const allMissions = [...LESSONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
 
 const getMissionsForVehicle = (vehicleType) => {
   switch (vehicleType) {
-    case "bike": return BIKE_MISSIONS;
     case "plane": return PLANE_MISSIONS;
     case "helicopter": return HELICOPTER_MISSIONS;
     default: return LESSONS;
   }
 };
 
-const vehicleLabel = { car: "LESSON", bike: "BIKE MISSION", plane: "FLIGHT MISSION", helicopter: "HELI MISSION" };
-const vehicleReadyLabel = { car: "I'm Ready, Let's Drive!", bike: "Let's Ride!", plane: "Cleared for Takeoff!", helicopter: "Ready to Lift Off!" };
+const vehicleLabel = { car: "LESSON", plane: "FLIGHT MISSION", helicopter: "HELI MISSION" };
+const vehicleReadyLabel = { car: "I'm Ready, Let's Drive!", plane: "Cleared for Takeoff!", helicopter: "Ready to Lift Off!" };
 
 const LessonOverlay = ({
   phase,

@@ -5,19 +5,6 @@ import useControls from "../hooks/useControls";
 import { Vector3, Quaternion, Euler } from "three";
 import simStore from "../simStore";
 
-/**
- * Helicopter flight physics:
- * - W = throttle up / collective pitch (go up)
- * - S = throttle down / collective down (descend)
- * - A = yaw left (rotate left)
- * - D = yaw right (rotate right)
- * - Arrow Up / I = pitch forward (tilt nose down = fly forward)
- * - Arrow Down / K = pitch backward (tilt nose up = fly backward)
- * - Arrow Left / J = roll left (strafe left)
- * - Arrow Right / L = roll right (strafe right)
- * - R = respawn
- */
-
 const Helicopter = ({
   cameraView,
   startPosition = [0, 8, 0],
@@ -40,13 +27,15 @@ const Helicopter = ({
   const velocity = useRef([0, 0, 0]);
   const position = useRef(new Vector3(...startPosition));
   const yaw = useRef(startRotation[1]);
-  const pitch = useRef(0); // nose forward/back tilt
-  const roll = useRef(0);  // side tilt
-  const collective = useRef(0); // vertical thrust 0-1
+  const pitch = useRef(0);
+  const roll = useRef(0);
+  const collective = useRef(0);
   const cameraPos = useRef(new Vector3());
   const cameraTarget = useRef(new Vector3());
+
   const rotorAngle = useRef(0);
   const rotorRef = useRef();
+  const tailRotorRef = useRef(); // Added reference for spinning tail rotor
 
   useEffect(() => {
     const unsub = bodyApi.velocity.subscribe((v) => { velocity.current = v; });
@@ -63,29 +52,25 @@ const Helicopter = ({
   useFrame((state, delta) => {
     const k = keys.current;
 
-    // Collective (vertical thrust)
+    // Throttle/Collective
     if (k.KeyW) collective.current = Math.min(1, collective.current + delta * 1.2);
     else if (k.KeyS) collective.current = Math.max(0, collective.current - delta * 0.8);
-    else collective.current += (0.5 - collective.current) * Math.min(1, delta * 0.5); // Hover tendency
+    else collective.current += (0.5 - collective.current) * Math.min(1, delta * 0.5);
 
-    // Yaw (tail rotor)
+    // Yaw (Tail Rotor Control)
     if (k.KeyA) yaw.current += delta * 1.8;
     if (k.KeyD) yaw.current -= delta * 1.8;
 
-    // Cyclic pitch (forward/back tilt) → forward flight
-    const targetPitch = k.ArrowUp || k.KeyI ? -0.5
-      : k.ArrowDown || k.KeyK ? 0.35
-      : 0;
+    // Pitch (Forward/Back)
+    const targetPitch = k.ArrowUp || k.KeyI || k.ShiftLeft || k.ShiftRight ? -0.5 : k.ArrowDown || k.KeyK || k.Space ? 0.35 : 0;
     pitch.current += (targetPitch - pitch.current) * Math.min(1, delta * 5);
 
-    // Cyclic roll (left/right tilt) → lateral flight
-    const targetRoll = k.ArrowLeft || k.KeyJ ? 0.45
-      : k.ArrowRight || k.KeyL ? -0.45
-      : 0;
+    // --- BUG FIX: Inverted Roll ---
+    // Swapped the input values: Left is now -0.45, Right is now 0.45
+    const targetRoll = k.ArrowLeft || k.KeyJ ? -0.45 : k.ArrowRight || k.KeyL ? 0.45 : 0;
     roll.current += (targetRoll - roll.current) * Math.min(1, delta * 5);
 
-    // Self-leveling when no input
-    if (!k.ArrowUp && !k.ArrowDown && !k.KeyI && !k.KeyK) {
+    if (!k.ArrowUp && !k.ArrowDown && !k.KeyI && !k.KeyK && !k.ShiftLeft && !k.ShiftRight && !k.Space) {
       pitch.current *= 0.97;
     }
     if (!k.ArrowLeft && !k.ArrowRight && !k.KeyJ && !k.KeyL) {
@@ -101,32 +86,35 @@ const Helicopter = ({
     simStore.rpm = collective.current * 8000;
     simStore.altitude = position.current.y;
 
-    // Gravity compensation + vertical thrust
+    // Lift Force
     const WEIGHT = 1200 * 9.82;
     const liftForce = collective.current * WEIGHT * 2.2;
     bodyApi.applyForce([0, liftForce - WEIGHT, 0], [0, 0, 0]);
 
-    // Horizontal thrust from cyclic (tilt = thrust direction)
+    // Calculate Directional Vectors
     const fwdX = -Math.sin(yaw.current);
     const fwdZ = -Math.cos(yaw.current);
     const rightX = Math.cos(yaw.current);
     const rightZ = -Math.sin(yaw.current);
 
+    // --- BUG FIX: Physics Force Application ---
+    // Changed '- roll.current' to '+ roll.current' to align with the new input signs
     const horizontalForce = 8000 * Math.max(0.3, collective.current);
     bodyApi.applyForce([
-      (fwdX * pitch.current + rightX * -roll.current) * horizontalForce,
+      (fwdX * pitch.current + rightX * roll.current) * horizontalForce,
       0,
-      (fwdZ * pitch.current + rightZ * -roll.current) * horizontalForce,
+      (fwdZ * pitch.current + rightZ * roll.current) * horizontalForce,
     ], [0, 0, 0]);
 
-    // Apply visual rotation
+    // Visual Rotation (Keeps the negative multiplier to ensure it leans into the turn visually)
     const visQuat = new Quaternion();
-    visQuat.setFromEuler(new Euler(pitch.current * 0.5, yaw.current, roll.current * 0.5, 'YXZ'));
+    visQuat.setFromEuler(new Euler(-pitch.current * 0.5, yaw.current, -roll.current * 0.5, 'YXZ'));
     bodyApi.quaternion.set(visQuat.x, visQuat.y, visQuat.z, visQuat.w);
 
-    // Spin rotor mesh
+    // Rotor Animations
     rotorAngle.current += delta * (collective.current > 0.05 ? 25 : 5);
     if (rotorRef.current) rotorRef.current.rotation.y = rotorAngle.current;
+    if (tailRotorRef.current) tailRotorRef.current.rotation.x = rotorAngle.current * 4;
 
     if (k.KeyR) {
       bodyApi.position.set(...startPosition);
@@ -138,14 +126,14 @@ const Helicopter = ({
       yaw.current = startRotation[1];
     }
 
-    // Camera
+    // Camera Logic
     if (cameraView === 0) return;
     const pos = position.current;
     simStore.position = [pos.x, pos.y, pos.z];
     const camOffset = new Vector3(
-      Math.sin(yaw.current) * 12,
+      -Math.sin(yaw.current) * 12,
       5,
-      Math.cos(yaw.current) * 12
+      -Math.cos(yaw.current) * 12
     );
     const desiredCam = pos.clone().add(camOffset);
     cameraPos.current.lerp(desiredCam, Math.min(1, delta * 4));
@@ -156,76 +144,114 @@ const Helicopter = ({
 
   return (
     <group ref={body}>
-      {/* Main fuselage */}
-      <mesh castShadow>
-        <boxGeometry args={[1.8, 1.1, 3.5]} />
-        <meshStandardMaterial color="#2d6a2d" metalness={0.4} roughness={0.5} />
+      {/* ========================================= */}
+      {/* UPGRADED VISUAL MODEL */}
+      {/* ========================================= */}
+
+      {/* Main Cabin (Aerodynamic stretched sphere) */}
+      <mesh castShadow position={[0, 0, 0]} scale={[1.1, 1.3, 2.2]}>
+        <sphereGeometry args={[1, 64, 32]} />
+        <meshStandardMaterial color="#223344" metalness={0.6} roughness={0.4} />
       </mesh>
-      {/* Cockpit glass */}
-      <mesh position={[0, 0.2, 1.4]}>
-        <sphereGeometry args={[0.85, 10, 8]} />
-        <meshStandardMaterial color="#88ccff" metalness={0} roughness={0} transparent opacity={0.4} />
+
+      {/* Cockpit Canopy (Refractive Glass) */}
+      <mesh position={[0, 0.25, 1.4]} scale={[0.85, 0.85, 1.1]}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshPhysicalMaterial
+          color="#88ccff"
+          transmission={0.9}
+          opacity={1}
+          metalness={0.1}
+          roughness={0.05}
+          ior={1.5}
+          thickness={0.2}
+        />
       </mesh>
-      {/* Tail boom */}
-      <mesh position={[0, 0.1, -2.8]} rotation={[0.05, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.18, 0.08, 4, 8]} />
-        <meshStandardMaterial color="#1e5c1e" metalness={0.4} roughness={0.5} />
+
+      {/* Tail Boom */}
+      <mesh position={[0, 0.3, -2.8]} rotation={[0.03, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.2, 0.1, 3.8, 16]} />
+        <meshStandardMaterial color="#1a2533" metalness={0.5} roughness={0.4} />
       </mesh>
-      {/* Tail fin */}
-      <mesh position={[0, 0.55, -4.7]} castShadow>
-        <boxGeometry args={[0.08, 1.2, 0.8]} />
-        <meshStandardMaterial color="#1e5c1e" />
+
+      {/* Tail Fin (Vertical Stabilizer) */}
+      <mesh position={[0, 0.7, -4.5]} scale={[0.08, 1.2, 0.7]} rotation={[-0.15, 0, 0]} castShadow>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshStandardMaterial color="#223344" metalness={0.5} roughness={0.4} />
       </mesh>
-      {/* Tail rotor */}
-      <group position={[0.3, 0.6, -4.6]}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <boxGeometry args={[1.5, 0.06, 0.2]} />
-          <meshStandardMaterial color="#333" metalness={0.8} />
+
+      {/* Tail Wing (Horizontal Stabilizer) */}
+      <mesh position={[0, 0.4, -4.2]} scale={[1.2, 0.04, 0.3]} castShadow>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshStandardMaterial color="#1a2533" metalness={0.5} roughness={0.4} />
+      </mesh>
+
+      {/* Main Rotor Mast */}
+      <mesh position={[0, 1.4, 0]}>
+        <cylinderGeometry args={[0.12, 0.15, 0.6, 16]} />
+        <meshStandardMaterial color="#444" metalness={0.8} />
+      </mesh>
+
+      {/* Main Rotor Assembly */}
+      <group ref={rotorRef} position={[0, 1.75, 0]}>
+        {/* Hub */}
+        <mesh>
+          <cylinderGeometry args={[0.3, 0.3, 0.15, 16]} />
+          <meshStandardMaterial color="#222" metalness={0.8} />
         </mesh>
-      </group>
-
-      {/* Main rotor mast */}
-      <mesh position={[0, 0.9, 0]}>
-        <cylinderGeometry args={[0.08, 0.08, 0.5, 8]} />
-        <meshStandardMaterial color="#333" metalness={0.8} />
-      </mesh>
-
-      {/* Spinning rotor group */}
-      <group ref={rotorRef} position={[0, 1.2, 0]}>
-        {/* 4 rotor blades */}
-        {[0, 1, 2, 3].map((i) => (
-          <mesh key={i} rotation={[0, (Math.PI / 2) * i, 0]} castShadow>
-            <boxGeometry args={[6.5, 0.08, 0.4]} />
-            <meshStandardMaterial color="#1a1a1a" metalness={0.6} roughness={0.3} />
+        {/* 4 Blades */}
+        {[0, Math.PI / 2].map((angle, i) => (
+          <mesh key={i} rotation={[0, angle, 0]} castShadow>
+            <boxGeometry args={[8.5, 0.04, 0.35]} />
+            <meshStandardMaterial color="#111" metalness={0.5} roughness={0.3} />
           </mesh>
         ))}
       </group>
 
-      {/* Landing skids */}
-      {[-0.7, 0.7].map((x) => (
-        <group key={x} position={[x, -0.7, 0]}>
-          <mesh rotation={[0, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.06, 0.06, 3.5, 8]} />
-            <meshStandardMaterial color="#222" metalness={0.7} />
+      {/* Tail Rotor Hub & Blades */}
+      <group position={[0.15, 1.1, -4.6]}>
+        {/* Tail Hub */}
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.08, 0.08, 0.25, 16]} />
+          <meshStandardMaterial color="#444" metalness={0.8} />
+        </mesh>
+        {/* Tail Blades */}
+        <group ref={tailRotorRef} position={[0.1, 0, 0]}>
+          <mesh rotation={[0, 0, Math.PI / 2]}>
+            <boxGeometry args={[0.04, 1.6, 0.15]} />
+            <meshStandardMaterial color="#111" />
           </mesh>
-          <mesh position={[0, -0.15, 1.4]} rotation={[0, 0, Math.PI / 12]}>
-            <cylinderGeometry args={[0.05, 0.05, 0.35, 6]} />
-            <meshStandardMaterial color="#222" />
+        </group>
+      </group>
+
+      {/* Landing Skids */}
+      {[-0.85, 0.85].map((x, i) => (
+        <group key={i} position={[x, -1.0, 0]}>
+          {/* Main Skid Tube */}
+          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.07, 4.5, 16]} />
+            <meshStandardMaterial color="#777" metalness={0.9} roughness={0.2} />
           </mesh>
-          <mesh position={[0, -0.15, -1.4]} rotation={[0, 0, -Math.PI / 12]}>
-            <cylinderGeometry args={[0.05, 0.05, 0.35, 6]} />
-            <meshStandardMaterial color="#222" />
+          {/* Front Curve Cap */}
+          <mesh position={[0, 0, 2.25]}>
+            <sphereGeometry args={[0.07, 16, 16]} />
+            <meshStandardMaterial color="#777" metalness={0.9} roughness={0.2} />
+          </mesh>
+          {/* Strut Front */}
+          <mesh position={[0, 0.5, 1.2]} rotation={[0, 0, x > 0 ? 0.25 : -0.25]}>
+            <cylinderGeometry args={[0.05, 0.05, 1.1, 8]} />
+            <meshStandardMaterial color="#333" />
+          </mesh>
+          {/* Strut Rear */}
+          <mesh position={[0, 0.5, -1.2]} rotation={[0, 0, x > 0 ? 0.25 : -0.25]}>
+            <cylinderGeometry args={[0.05, 0.05, 1.1, 8]} />
+            <meshStandardMaterial color="#333" />
           </mesh>
         </group>
       ))}
 
-      {/* Searchlight - downward beam */}
-      <pointLight
-        position={[0, -0.8, 1]}
-        intensity={60}
-        color="#fff8e0"
-        distance={50}
-      />
+      {/* Spotlight */}
+      <pointLight position={[0, -0.8, 1.5]} intensity={80} color="#fff8e0" distance={60} />
     </group>
   );
 };

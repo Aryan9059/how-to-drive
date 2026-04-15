@@ -1,9 +1,4 @@
-/**
- * TrackPlane2.jsx – Mountain Gates (redesigned)
- * Plane starts at x=-180 facing +X. 5 gate rings matching LessonMonitor:
- * (80,20,0), (160,35,20), (240,25,-15), (320,50,10), (400,40,-20).
- * Mountains and a river valley provide visual context.
- */
+
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
 
@@ -37,23 +32,23 @@ const PineTree = ({ position }) => (
   </group>
 );
 
-// Gate ring colours cycle through a vibrant palette
+
 const GATE_COLORS = ["#00ffcc", "#ff6600", "#6600ff", "#ffdd00", "#00ff44"];
 
 const TrackPlane2 = () => (
   <>
-    {/* ── TERRAIN ── */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
       <planeGeometry args={[1200, 800]} />
       <meshStandardMaterial color="#7a9a5a" roughness={1} />
     </mesh>
 
-    {/* ── RIVER VALLEY (visual guide along flight path) ── */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[150, 0.01, 0]} receiveShadow>
       <planeGeometry args={[500, 18]} />
       <meshStandardMaterial color="#3a6a9a" roughness={0.05} metalness={0.2} />
     </mesh>
-    {/* River banks */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[150, 0.005, 12]}>
       <planeGeometry args={[500, 8]} />
       <meshStandardMaterial color="#c4a86a" roughness={1} />
@@ -63,19 +58,19 @@ const TrackPlane2 = () => (
       <meshStandardMaterial color="#c4a86a" roughness={1} />
     </mesh>
 
-    {/* ── TAKE-OFF STRIP ── */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-80, 0.01, 0]} receiveShadow>
       <planeGeometry args={[220, 24]} />
       <meshStandardMaterial color="#222" roughness={0.8} />
     </mesh>
-    {/* Runway centerline */}
+    {}
     {Array.from({ length: 14 }).map((_, i) => (
       <mesh key={`cl${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-172 + i * 16, 0.02, 0]}>
         <planeGeometry args={[8, 0.45]} />
         <meshStandardMaterial color="#fff" opacity={0.8} transparent />
       </mesh>
     ))}
-    {/* Threshold bars */}
+    {}
     {[-8, -4, 0, 4, 8].map((z, i) => (
       <mesh key={`thb${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-175, 0.02, z]}>
         <planeGeometry args={[6, 1.5]} />
@@ -83,22 +78,22 @@ const TrackPlane2 = () => (
       </mesh>
     ))}
 
-    {/* ── MOUNTAINS ── */}
-    {/* Left/north cluster */}
+    {}
+    {}
     <Mountain position={[100, 0, -120]} radius={55} height={80} color="#6d6d6d" />
     <Mountain position={[200, 0, -140]} radius={45} height={95} color="#707070" />
     <Mountain position={[320, 0, -100]} radius={50} height={70} color="#686868" />
     <Mountain position={[420, 0, -130]} radius={60} height={88} color="#6a6a6a" />
-    {/* Snow caps */}
+    {}
     <Mountain position={[200, 72, -140]} radius={12} height={25} color="#f0f0ff" />
     <Mountain position={[420, 65, -130]} radius={14} height={28} color="#f0f0ff" />
 
-    {/* Right/south cluster */}
+    {}
     <Mountain position={[130, 0, 110]} radius={48} height={65} color="#6a6a62" />
     <Mountain position={[280, 0, 130]} radius={55} height={78} color="#68686a" />
     <Mountain position={[390, 0, 100]} radius={42} height={62} color="#6e6e6e" />
 
-    {/* ── PINE TREES ON SLOPES ── */}
+    {}
     {Array.from({ length: 24 }).map((_, i) => (
       <PineTree key={`pt${i}`} position={[
         60 + (i % 8) * 55,
@@ -114,7 +109,7 @@ const TrackPlane2 = () => (
       ]} />
     ))}
 
-    {/* ── AERIAL GATE RINGS (match LessonMonitor positions exactly) ── */}
+    {}
     {[
       { pos: [80, 20, 0],    color: GATE_COLORS[0] },
       { pos: [160, 35, 20],  color: GATE_COLORS[1] },
@@ -128,7 +123,7 @@ const TrackPlane2 = () => (
           <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.9} />
         </mesh>
         <pointLight color={color} intensity={5} distance={35} />
-        {/* Number marker on ground below */}
+        {}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -pos[1] + 0.1, 0]}>
           <planeGeometry args={[8, 8]} />
           <meshStandardMaterial color={color} opacity={0.35} transparent />
@@ -136,19 +131,19 @@ const TrackPlane2 = () => (
       </group>
     ))}
 
-    {/* ── DESTINATION AIRFIELD (end of course) ── */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[450, 0.01, 0]} receiveShadow>
       <planeGeometry args={[120, 22]} />
       <meshStandardMaterial color="#333" roughness={0.9} />
     </mesh>
-    {/* Finish ring on ground */}
+    {}
     <mesh position={[450, 0.5, 0]}>
       <torusGeometry args={[18, 1.0, 8, 28]} />
       <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={1} />
     </mesh>
     <pointLight position={[450, 8, 0]} color="#ffffff" intensity={5} distance={30} />
 
-    {/* ── START AREA WINDSOCK ── */}
+    {}
     <StaticBox position={[-175, 7, 20]} args={[0.22, 14, 0.22]} color="#333" />
     <mesh position={[-175, 14.8, 21.5]} rotation={[0.5, 0, 0]}>
       <coneGeometry args={[0.45, 1.8, 8]} />

@@ -1,16 +1,15 @@
 import { useState } from "react";
-import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS, VEHICLE_CATEGORIES } from "../gameConfig";
+import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY, PLANE_MISSIONS, HELICOPTER_MISSIONS, VEHICLE_CATEGORIES } from "../gameConfig";
 import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass, Play, ChevronLeft, Car, Volume2, VolumeX, Plane, Wind, Navigation } from 'lucide-react';
 
-// Vehicle icon resolver
+
 const VehicleIcon = ({ id, size = 28 }) => {
-  const map = { car: "🚗", bike: "🏍️", plane: "✈️", helicopter: "🚁" };
+  const map = { car: "🚗", plane: "✈️", helicopter: "🚁" };
   return <span style={{ fontSize: size, lineHeight: 1 }}>{map[id] || "🚗"}</span>;
 };
 
 const getMissionsForVehicle = (vehicleId) => {
   switch (vehicleId) {
-    case "bike": return BIKE_MISSIONS;
     case "plane": return PLANE_MISSIONS;
     case "helicopter": return HELICOPTER_MISSIONS;
     default: return LESSONS;
@@ -97,11 +96,9 @@ const MenuScreen = ({
   const currentMissions = getMissionsForVehicle(selectedVehicle);
   const vehicleCategory = VEHICLE_CATEGORIES.find(v => v.id === selectedVehicle);
 
-  // Controls hints per vehicle
+
   const getControlsHints = () => {
     switch (selectedVehicle) {
-      case "bike":
-        return [["W", "Throttle"], ["S", "Brake"], ["A/D", "Steer/Lean"], ["SPACE", "Rear Brake"], ["R", "Reset"], ["V", "Camera"], ["ESC", "Menu"]];
       case "plane":
         return [["W", "Throttle"], ["S", "Throttle ▼"], ["A/D", "Bank L/R"], ["SPACE", "Pitch Up"], ["Shift", "Pitch Down"], ["↑↓", "Pitch"], ["R", "Reset"], ["ESC", "Menu"]];
       case "helicopter":
@@ -141,7 +138,7 @@ const MenuScreen = ({
               </h1>
             </header>
 
-            {/* Vehicle category tabs — only in missions */}
+            {}
             {menuStep === "missions" && (
               <div className="vehicle-tabs">
                 {VEHICLE_CATEGORIES.map((v) => (
@@ -158,7 +155,7 @@ const MenuScreen = ({
               </div>
             )}
 
-            {/* Vehicle description */}
+            {}
             {menuStep === "missions" && vehicleCategory && (
               <p className="vehicle-desc">{vehicleCategory.description}</p>
             )}

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import simStore from "../simStore";
-import { GEAR_NAMES, ENGINE_CONFIG, LESSONS, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
+import { GEAR_NAMES, ENGINE_CONFIG, LESSONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
 import TouchControls from "./TouchControls";
 
-const allMissions = [...LESSONS, ...BIKE_MISSIONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
+const allMissions = [...LESSONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
 
 const Gauge = ({ value, max, color, label, unit, redline }) => {
   const r = 48;
@@ -90,30 +90,18 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
   const gearName = GEAR_NAMES[tel.gear] ?? "N";
   const touch = isTouchDevice();
 
-  // Vehicle-specific track name
   const getTrackName = () => {
     switch (vehicleType) {
-      case "bike": return "Bike Track";
       case "plane": return "Airfield";
       case "helicopter": return "Heliport";
       default: return "Stunt Track";
     }
   };
 
-  // Vehicle emoji for badge
-  const vehicleEmoji = { car: "🚗", bike: "🏍️", plane: "✈️", helicopter: "🚁" }[vehicleType] || "🚗";
+  const vehicleEmoji = { car: "🚗", plane: "✈️", helicopter: "🚁" }[vehicleType] || "🚗";
 
-  // Vehicle-specific key hints
   const getKeyHints = () => {
     switch (vehicleType) {
-      case "bike":
-        return [
-          ["W/S", "Throttle/Brake"],
-          ["A/D", "Steer/Lean"],
-          ["SPACE", "Rear Brake"],
-          ["V", "Camera"],
-          ["R", "Reset"],
-        ];
       case "plane":
         return [
           ["W", "Throttle ▲"],
@@ -147,7 +135,6 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
     }
   };
 
-  // For aircraft: show altitude instead of RPM
   const isAerial = vehicleType === "plane" || vehicleType === "helicopter";
 
   return (
@@ -177,7 +164,7 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
           </div>
         )}
 
-        {/* Altitude indicator for aerial vehicles */}
+        {/* Global Altitude Badge for Aerial Vehicles */}
         {isAerial && (
           <div className="simhud-altitude">
             <span className="altitude-icon">▲</span>
@@ -196,58 +183,84 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
 
         {!touch && (
           <div className="simhud-panel">
-            {isAerial ? (
-              <>
-                <Gauge
-                  value={tel.rpm}
-                  max={8000}
-                  color={vehicleType === "plane" ? "#22d3ee" : "#34d399"}
-                  label={vehicleType === "plane" ? "THROTTLE" : "COLLECTIVE"}
-                  unit="%"
-                  redline={null}
-                />
-                <div className="gear-display">
-                  <div className="gear-digit" style={{ fontSize: '1.2rem' }}>
-                    {vehicleType === "plane" ? "✈" : "🚁"}
-                  </div>
-                  <div className="gear-label">MODE</div>
-                  <EngineLight state={tel.engineState} />
-                </div>
-                <Gauge
-                  value={tel.speed}
-                  max={vehicleType === "plane" ? 400 : 150}
-                  color="#22d3ee"
-                  label="SPEED"
-                  unit="km/h"
-                />
-              </>
-            ) : (
+
+            {/* CAR HUD */}
+            {vehicleType === "car" && (
               <>
                 <Gauge
                   value={tel.rpm / 20}
                   max={ENGINE_CONFIG.maxRpm / 20}
-                  color={vehicleType === "bike" ? "#f59e0b" : "#6366f1"}
+                  color="#6366f1"
                   label="RPM"
                   unit=""
                   redline={ENGINE_CONFIG.redlineRpm / 20}
                 />
-
                 <div className="gear-display">
                   <div className="gear-digit">{gearName}</div>
                   <div className="gear-label">GEAR</div>
                   <EngineLight state={tel.engineState} />
-                  {vehicleType === "car" && <ShiftIndicator rpm={tel.rpm} />}
+                  <ShiftIndicator rpm={tel.rpm} />
                 </div>
-
                 <Gauge
                   value={tel.speed}
-                  max={vehicleType === "bike" ? 250 : 200}
+                  max={200}
                   color="#22d3ee"
                   label="SPEED"
                   unit="km/h"
                 />
               </>
             )}
+
+            {/* HELICOPTER HUD */}
+            {vehicleType === "helicopter" && (
+              <>
+                <Gauge
+                  value={(tel.rpm / 8000) * 100}
+                  max={100}
+                  color="#34d399"
+                  label="COLLECTIVE"
+                  unit="%"
+                />
+                <div className="gear-display">
+                  <div className="gear-digit" style={{ fontSize: '1.2rem' }}>🚁</div>
+                  <div className="gear-label">MODE</div>
+                  <EngineLight state={tel.engineState} />
+                </div>
+                <Gauge
+                  value={tel.speed}
+                  max={150}
+                  color="#22d3ee"
+                  label="SPEED"
+                  unit="km/h"
+                />
+              </>
+            )}
+
+            {/* PLANE HUD */}
+            {vehicleType === "plane" && (
+              <>
+                <Gauge
+                  value={(tel.rpm / 8000) * 100}
+                  max={100}
+                  color="#22d3ee"
+                  label="THROTTLE"
+                  unit="%"
+                />
+                <div className="gear-display">
+                  <div className="gear-digit" style={{ fontSize: '1.2rem' }}>✈️</div>
+                  <div className="gear-label">STATUS</div>
+                  <EngineLight state={tel.engineState} />
+                </div>
+                <Gauge
+                  value={tel.speed}
+                  max={400}
+                  color="#3b82f6"
+                  label="AIRSPEED"
+                  unit="km/h"
+                />
+              </>
+            )}
+
           </div>
         )}
 

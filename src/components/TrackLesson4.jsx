@@ -23,7 +23,7 @@ const TrackLesson4 = () => (
       <meshStandardMaterial color="#282828" roughness={0.9} />
     </mesh>
 
-    {/* Long smooth acceleration lane */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[30, 0.015, -3]}>
       <planeGeometry args={[100, 12]} />
       <meshStandardMaterial color="#323232" roughness={0.85} />
@@ -46,7 +46,7 @@ const TrackLesson4 = () => (
       </mesh>
     ))}
 
-    {/* Braking zone moved from 55 to 185 */}
+    {}
     {Array.from({ length: 16 }).map((_, i) => (
       <mesh key={`bz-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[185 + i * 1.4, 0.025, -3]}>
         <planeGeometry args={[1.2, 12]} />
@@ -64,7 +64,7 @@ const TrackLesson4 = () => (
       </group>
     ))}
 
-    {/* Wall moved back */}
+    {}
     <StaticBox position={[215, 2, -3]} args={[0.8, 4, 14]} color="#cc1111" emissive="#ff0000" emissiveIntensity={0.5} />
 
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[214, 0.03, -3]}>

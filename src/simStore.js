@@ -15,8 +15,7 @@ const simStore = {
   hornActive: false,
   musicMuted: false,
 
-  // Vehicle-specific
-  bikeState: "idle",
+
   
   metrics: {
     startTime: 0,

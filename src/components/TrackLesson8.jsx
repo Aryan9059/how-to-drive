@@ -13,7 +13,7 @@ const StaticBox = ({ position, args, color = "#888", rotation = [0, 0, 0], emiss
 
 const TrackLesson8 = () => {
   const hillAngle = Math.PI / 10;
-  const hillLength = 100; // Increased significantly
+  const hillLength = 100;
   const hillRise = Math.sin(hillAngle) * hillLength;
   const hillRun = Math.cos(hillAngle) * hillLength;
 
@@ -46,7 +46,7 @@ const TrackLesson8 = () => {
         <meshStandardMaterial color="#ff0000" />
       </mesh>
 
-      {/* End Line Gate placed in the opposite (left) lane */}
+      {}
       <StaticBox position={[hillRun + 20, hillRise + 2, 5.5]} args={[0.4, 4, 0.4]} color="#00dd00" emissive="#00ff00" emissiveIntensity={0.6} />
       <StaticBox position={[hillRun + 20, hillRise + 2, -3]} args={[0.4, 4, 0.4]} color="#00dd00" emissive="#00ff00" emissiveIntensity={0.6} />
       <mesh position={[hillRun + 20, hillRise + 4.3, 1.25]}>

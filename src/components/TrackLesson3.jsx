@@ -59,7 +59,7 @@ const TrackLesson3 = () => (
       </mesh>
     ))}
 
-    {/* Spread gates much wider */}
+    {}
     <GearGate x={100} label="2" color="#22cc44" emissive="#00ff44" />
     <GearGate x={300} label="3" color="#ffaa00" emissive="#ffcc00" />
     <GearGate x={500} label="4" color="#cc2222" emissive="#ff4400" />

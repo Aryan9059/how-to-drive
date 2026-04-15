@@ -43,7 +43,7 @@ const TrackLesson7 = () => (
       );
     })}
 
-    {/* Extended approach roads */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -66]}>
       <planeGeometry args={[10, 100]} />
       <meshStandardMaterial color="#2c2c2c" roughness={0.9} />

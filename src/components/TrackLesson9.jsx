@@ -25,7 +25,7 @@ const Cone = ({ position, color = "#ff3300" }) => (
 );
 
 const TrackLesson9 = () => {
-  // Drastically increased slalom cones
+
   const slalomCones = Array.from({ length: 25 }).map((_, i) => [10 + i * 6, i % 2 === 0 ? 3.5 : -3.5]);
 
   return (
@@ -65,7 +65,7 @@ const TrackLesson9 = () => {
         <Cone key={`sc2-${i}`} position={[x + 1.2, 0, z + (-3)]} color={i % 2 === 0 ? "#ff5500" : "#0066ff"} />
       ))}
 
-      {/* Moved finish gate significantly forward */}
+      {}
       <StaticBox position={[164, 2.5, 5.5]} args={[0.4, 5, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.6} />
       <StaticBox position={[164, 2.5, -11.5]} args={[0.4, 5, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.6} />
       <mesh position={[164, 5.3, -3]}>

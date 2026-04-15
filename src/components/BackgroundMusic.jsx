@@ -5,7 +5,7 @@ const BackgroundMusic = ({ mode, muted }) => {
   const initialized = useRef(false);
 
   useEffect(() => {
-    // Initialize audio object
+
     const audio = new Audio("/background.mp3");
     audio.loop = true;
     audio.volume = muted ? 0 : (mode === "menu" ? 0.4 : 0.1);
@@ -37,9 +37,9 @@ const BackgroundMusic = ({ mode, muted }) => {
     if (audioRef.current) {
       const targetVolume = muted ? 0 : (mode === "menu" ? 0.4 : 0.1);
 
-      // Smooth transition (linear fade)
+
       const currentVol = audioRef.current.volume;
-      const step = (targetVolume - currentVol) / 20; // 20 steps over 1 second
+      const step = (targetVolume - currentVol) / 20;
       let count = 0;
 
       const interval = setInterval(() => {

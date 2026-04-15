@@ -6,18 +6,18 @@ import Ramp from "./Ramp";
 const Track1 = () => {
   const result = useLoader(GLTFLoader, "models/track.glb").scene;
 
-  // Circular boundary parameters
-  const radius = 70; // Adjust this to make the boundary larger or smaller
+
+  const radius = 70;
   const segments = 36;
-  const height = 20; // High enough so the car doesn't fly over it
-  const thickness = 2; // Thickness of the invisible wall
-  // Calculate width of each segment (arc length + slight overlap to prevent gaps)
+  const height = 20;
+  const thickness = 2;
+
   const segmentLength = (2 * Math.PI * radius) / segments + 2;
 
-  // Generate the invisible boundary boxes
+
   const boundaryBoxes = Array.from({ length: segments }).map((_, i) => {
     const angle = (i / segments) * Math.PI * 2;
-    // Calculate x and z positions on the circle
+
     const x = Math.cos(angle) * radius;
     const z = Math.sin(angle) * radius;
 
@@ -26,7 +26,7 @@ const Track1 = () => {
         key={`boundary-${i}`}
         position={[x, height / 2, z]}
         scale={[segmentLength, height, thickness]}
-        // Tangent rotation to make the box face the center
+
         rotation={[0, -angle + Math.PI / 2, 0]}
       />
     );
@@ -36,7 +36,7 @@ const Track1 = () => {
     <>
       <primitive object={result} />
 
-      {/* Existing track obstacles and inner colliders */}
+      {}
       <ColliderBox position={[-2.8, 0, 9.55]} rotation={[0, Math.PI / 4, 0]} />
       <ColliderBox position={[-4.15, 0, 11.9]} rotation={[0, Math.PI / 3, 0]} />
       <ColliderBox position={[-5.75, 0, 9.85]} rotation={[0, Math.PI / 4, 0]} />
@@ -85,7 +85,7 @@ const Track1 = () => {
 
       <Ramp />
 
-      {/* Invisible Circular Boundary */}
+      {}
       {boundaryBoxes}
     </>
   );

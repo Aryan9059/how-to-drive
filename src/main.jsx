@@ -8,7 +8,7 @@ import MenuScreen from "./components/MenuScreen";
 import SimHUD from "./components/SimHUD";
 import LessonOverlay from "./components/LessonOverlay";
 import BackgroundMusic from "./components/BackgroundMusic";
-import { LESSONS, BIKE_MISSIONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "./gameConfig";
+import { LESSONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "./gameConfig";
 import simStore from "./simStore";
 
 const loadCompleted = () => {
@@ -26,7 +26,7 @@ const saveCompleted = (obj) => {
 
 const getLessonsForVehicle = (vehicleType) => {
   switch (vehicleType) {
-    case "bike": return BIKE_MISSIONS;
+
     case "plane": return PLANE_MISSIONS;
     case "helicopter": return HELICOPTER_MISSIONS;
     default: return LESSONS;
@@ -45,7 +45,7 @@ const App = () => {
   const [lessonPhase, setLessonPhase] = useState("intro");
   const [canvasKey, setCanvasKey] = useState(0);
   const [musicMuted, setMusicMuted] = useState(simStore.musicMuted);
-  const [vehicleType, setVehicleType] = useState("car"); // "car" | "bike" | "plane" | "helicopter"
+  const [vehicleType, setVehicleType] = useState("car");
 
   const goMenu = useCallback(() => {
     setGameMode("menu");
@@ -67,7 +67,7 @@ const App = () => {
     setTrackId(tid);
     setDifficulty(diff);
     setTimeOfDay(tod);
-    setVehicleType("car"); // free roam is always car
+    setVehicleType("car");
     setCanvasKey((k) => k + 1);
     setGameMode("freeDrive");
   }, []);
@@ -142,7 +142,7 @@ const App = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [gameMode, menuStep, goMenu]);
 
-  // Gravity per vehicle
+
   const getGravity = () => {
     if (vehicleType === "plane" || vehicleType === "helicopter") return [0, -9.82, 0];
     return [0, -2.1, 0];

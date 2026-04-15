@@ -1,17 +1,7 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 
-/**
- * Checkpoint – works in both ground (XZ) and aerial (3D) modes.
- * 
- * Props:
- *  - position: [x,y,z]
- *  - radius: trigger radius
- *  - mode3D: if true, checks full 3D sphere distance (for aerial vehicles)
- *  - requireStop: if true, also requires speed ≤ requiredSpeed
- *  - requiredSpeed: threshold for requireStop
- *  - onTrigger: callback when triggered
- */
+
 const Checkpoint = ({
   position,
   radius = 3,
@@ -64,14 +54,14 @@ const Checkpoint = ({
           opacity={0.9}
         />
       </mesh>
-      {/* Ground poles (shown in non-3D mode only) */}
+      {}
       {!mode3D && [[-radius, 0, 0], [radius, 0, 0]].map(([x, y, z], i) => (
         <mesh key={i} position={[x, 2, z]}>
           <cylinderGeometry args={[0.08, 0.08, 4, 8]} />
           <meshStandardMaterial color="#6366f1" emissive="#6366f1" emissiveIntensity={0.6} />
         </mesh>
       ))}
-      {/* Glow sphere for aerial checkpoints */}
+      {}
       {mode3D && (
         <mesh>
           <sphereGeometry args={[radius * 0.3, 12, 12]} />

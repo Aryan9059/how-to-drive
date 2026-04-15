@@ -13,7 +13,7 @@ const HighwayTrack = () => {
         <planeGeometry args={[1200, 12]} />
         <meshStandardMaterial color="#3a3a3a" roughness={0.9} />
       </mesh>
-      
+
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[500, -0.05, -3]}>
         <planeGeometry args={[1200, 150]} />
         <meshStandardMaterial color="#3d5a3d" roughness={1.0} />
@@ -25,7 +25,7 @@ const HighwayTrack = () => {
           <meshBasicMaterial color="#ffffff" opacity={0.6} transparent />
         </mesh>
       ))}
-      
+
       {Array.from({ length: 50 }).map((_, i) => (
         <group key={`tree-L-${i}`} position={[-20 + i * 20, 0, -12 - Math.random() * 6]}>
           <mesh position={[0, 1, 0]}>

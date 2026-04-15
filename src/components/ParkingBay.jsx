@@ -15,7 +15,7 @@ const ParkingBay = ({
     const [bx, , bz] = position;
     const [px, , pz] = simStore.position;
 
-    const inBay 
+    const inBay
       = Math.abs(px - bx) < bw / 2
       && Math.abs(pz - bz) < bd / 2;
     const stopped  = simStore.speed < 0.5;

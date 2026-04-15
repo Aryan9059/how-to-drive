@@ -27,7 +27,7 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     window._simPos = simStore.position;
     window._simSpeed = simStore.speed;
 
-    // Car – highway lesson
+
     if (lessonId === "lesson6") {
       const { speed, gear } = simStore;
       if (speed >= 40 && gear >= 4) {
@@ -38,17 +38,12 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
       }
     }
 
-    // Bike – Mountain Run: pass 3 checkpoints at speed >= 60
-    if (lessonId === "bike2") {
-      // handled by checkpoint triggers below
-    }
 
-    // Plane – gather altitude checkpoints
-    // Helicopter – hover/land checkpoints
-    // All plane/heli mission pass logic via Checkpoint triggers
+
+
   });
 
-  // ─── Car Missions ────────────────────────────────────────────
+
   if (lessonId === "lesson1") {
     return <Checkpoint position={[80, 1, -3]} radius={4} onTrigger={callPass} />;
   }
@@ -92,26 +87,10 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     return <Checkpoint position={[74, 1, -3]} radius={6} onTrigger={callPass} />;
   }
 
-  // ─── Bike Missions ───────────────────────────────────────────
-  if (lessonId === "bike1") {
-    // Finish gate checkpoint at the end of the slalom
-    return <Checkpoint position={[112, 1, 0]} radius={8} onTrigger={callPass} />;
-  }
 
-  if (lessonId === "bike2") {
-    // 3 speed checkpoints along the mountain road, all must be passed
-    return (
-      <>
-        <Checkpoint position={[80, 1, 0]} radius={10} onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 3) callPass(); }} />
-        <Checkpoint position={[80, 1, -40]} radius={10} onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 3) callPass(); }} />
-        <Checkpoint position={[80, 1, -80]} radius={10} onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 3) callPass(); }} />
-      </>
-    );
-  }
 
-  // ─── Plane Missions ──────────────────────────────────────────
   if (lessonId === "plane1") {
-    // Fly through 3 altitude rings (use mode3D for aerial)
+
     return (
       <>
         <Checkpoint position={[50, 15, 0]} radius={14} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 3) callPass(); }} />
@@ -122,7 +101,7 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
   }
 
   if (lessonId === "plane2") {
-    // Fly through 5 aerial rings
+
     return (
       <>
         <Checkpoint position={[80, 20, 0]} radius={16} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 5) callPass(); }} />
@@ -134,22 +113,8 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     );
   }
 
-  // ─── Bike Missions (new levels) ──────────────────────────────
-  if (lessonId === "bike3") {
-    return <Checkpoint position={[240, 1, 0]} radius={12} onTrigger={callPass} />;
-  }
 
-  if (lessonId === "bike4") {
-    return (
-      <Checkpoint
-        position={[0, 1, 30]}
-        radius={10}
-        onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 2) callPass(); }}
-      />
-    );
-  }
 
-  // ─── Plane Missions (new levels) ─────────────────────────────
   if (lessonId === "plane3") {
     return (
       <>
@@ -176,9 +141,9 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     );
   }
 
-  // ─── Helicopter Missions ─────────────────────────────────────
+
   if (lessonId === "heli1") {
-    // Land on 3 helipads – use mode3D so altitude matters
+
     return (
       <>
         <Checkpoint position={[80, 17, 0]} radius={9} mode3D requireStop={true} requiredSpeed={5} onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 3) callPass(); }} />
@@ -189,7 +154,7 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
   }
 
   if (lessonId === "heli2") {
-    // Fly through 3 canyon waypoint rings then reach summit
+
     return (
       <>
         <Checkpoint position={[-60, 15, -20]} radius={8} mode3D onTrigger={() => { gatesPassed.current++; }} />

@@ -1,6 +1,4 @@
-/**
- * TrackHelicopter2.jsx – Search & Rescue canyon mission
- */
+
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
 
@@ -37,19 +35,19 @@ const Helipad = ({ position }) => (
 
 const TrackHelicopter2 = () => (
   <>
-    {/* Canyon floor */}
+    {}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -5, 0]} receiveShadow>
       <planeGeometry args={[800, 800]} />
       <meshStandardMaterial color="#9a6a3a" roughness={1} />
     </mesh>
 
-    {/* Canyon walls (big static walls) */}
+    {}
     <StaticBox position={[0, 20, -120]} args={[300, 60, 30]} color="#8b6530" />
     <StaticBox position={[0, 20, 120]} args={[300, 60, 30]} color="#8b6530" />
     <StaticBox position={[-150, 20, 0]} args={[30, 60, 210]} color="#7a5525" />
     <StaticBox position={[150, 20, 0]} args={[30, 60, 210]} color="#7a5525" />
 
-    {/* Natural rock pillars inside canyon */}
+    {}
     {[
       { pos: [30, 15, -40], s: 10, h: 30 },
       { pos: [-40, 20, 30], s: 12, h: 40 },
@@ -60,26 +58,26 @@ const TrackHelicopter2 = () => (
       <StaticBox key={i} position={pos} args={[s, h, s]} color="#8a6535" />
     ))}
 
-    {/* Mission start helipad */}
+    {}
     <Helipad position={[-100, -4.9, -80]} />
 
-    {/* Elevated rescue helipads */}
+    {}
     <StaticBox position={[0, 5, 0]} args={[15, 10, 15]} color="#666" />
     <Helipad position={[0, 10.05, 0]} />
 
     <StaticBox position={[80, 18, -60]} args={[12, 36, 12]} color="#555" />
     <Helipad position={[80, 36.05, -60]} />
 
-    {/* Wrecked aircraft (atmosphere) */}
+    {}
     <StaticBox position={[-50, -4.5, 40]} args={[8, 0.4, 2]} color="#888" />
     <StaticBox position={[-50, -4.5, 40]} args={[1.5, 2, 0.3]} color="#888" />
 
-    {/* Rescue beacon lights */}
+    {}
     {[[80, 37, -60], [0, 11, 0], [-100, 0, -80]].map((pos, i) => (
       <pointLight key={i} position={pos} color={i === 0 ? "#ff4400" : "#ffdd00"} intensity={5} distance={30} />
     ))}
 
-    {/* Flying waypoints */}
+    {}
     {[
       { pos: [-60, 15, -20], color: "#00ffcc" },
       { pos: [40, 25, -20], color: "#ff6600" },
