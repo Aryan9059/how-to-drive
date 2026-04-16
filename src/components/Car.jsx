@@ -74,7 +74,7 @@ const Car = ({
     simStore.hornActive = true;
     const hornAudio = new Audio("/horn.wav");
     hornAudio.volume = 0.5;
-    hornAudio.play().catch(() => {});
+    hornAudio.play().catch(() => { });
     setTimeout(() => { simStore.hornActive = false; }, 400);
   }, []);
 
@@ -128,9 +128,9 @@ const Car = ({
 
     if (engineState === "cranking") {
       start.currentTime = 0;
-      start.play().catch(() => {});
+      start.play().catch(() => { });
     } else if (engineState === "on") {
-      running.play().catch(() => {});
+      running.play().catch(() => { });
     } else {
       running.pause();
       running.currentTime = 0;
@@ -176,7 +176,7 @@ const Car = ({
     }
 
     const canDrive = eng === "on";
-    
+
     if (canDrive && carOnAudio.current) {
       const isMuted = simStore.musicMuted;
       const targetVol = isMuted ? 0 : (throttle ? 1.0 : 0.0);

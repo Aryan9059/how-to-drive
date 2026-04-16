@@ -2,22 +2,25 @@ import { useSphere } from "@react-three/cannon";
 import { useFrame } from "@react-three/fiber";
 import { useRef, useEffect } from "react";
 import useControls from "../hooks/useControls";
-import { Vector3, Quaternion, Euler } from "three";
+import { Vector3, Quaternion, Euler, MathUtils } from "three";
 import simStore from "../simStore";
+
+// Utility: linear interpolation for smooth input (from PlaneController)
+const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
 
 const Plane = ({
   cameraView,
   startPosition = [0, 5, 0],
   startRotation = [0, Math.PI / 2, 0],
 }) => {
+  // Kinematic body — we drive position & rotation directly (matches reference approach)
   const [body, bodyApi] = useSphere(
     () => ({
-      mass: 800,
-      args: [1],
+      mass: 0,
+      type: "Kinematic",
+      args: [1.5],
       position: startPosition,
       rotation: startRotation,
-      linearDamping: 0.15,
-      angularDamping: 0.95,
       allowSleep: false,
     }),
     useRef(null)
@@ -25,19 +28,58 @@ const Plane = ({
 
   const propRef = useRef();
   const keys = useControls({});
-  const velocity = useRef([0, 0, 0]);
   const position = useRef(new Vector3(...startPosition));
-  const throttle = useRef(0);
-  const pitch = useRef(0);
-  const roll = useRef(0);
-  const yaw = useRef(startRotation[1]);
   const cameraPos = useRef(new Vector3());
   const cameraTarget = useRef(new Vector3());
 
-  useEffect(() => {
-    const unsub = bodyApi.velocity.subscribe((v) => { velocity.current = v; });
-    return unsub;
-  }, [bodyApi]);
+  // ═══════════════════════════════════════════════════════════
+  // PLANE PHYSICS STATE (ported from PlanePhysics class)
+  // ═══════════════════════════════════════════════════════════
+  const physics = useRef({
+    speed: 100,
+    maxSpeed: 1000,
+    minSpeed: 100,
+    throttle: 0.5,
+    enginePower: 1.2,
+    drag: 0.005,
+    liftFactor: 0.002,
+    gravity: 9.8,
+
+    pitch: 0,    // degrees
+    roll: 0,     // degrees
+    heading: MathUtils.radToDeg(startRotation[1]),
+
+    pitchRate: 1.2,
+    rollRate: 2.5,
+    yawRate: 0.5,
+
+    // Boost system
+    isBoosting: false,
+    boostTimeRemaining: 0,
+    boostDuration: 2.5,
+    boostMultiplier: 1.5,
+    boostRotations: 2,
+    boostPressed: false,
+
+    // Quaternion-based orientation (core of the reference physics)
+    quaternion: new Quaternion().setFromEuler(
+      new Euler(0, startRotation[1], 0, 'YXZ')
+    ),
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // SMOOTHED INPUT STATE (ported from PlaneController class)
+  // ═══════════════════════════════════════════════════════════
+  const input = useRef({
+    throttle: 0.5,
+    pitch: 0,
+    roll: 0,
+    yaw: 0,
+    boost: false,
+  });
+
+  // World-space movement scale (adjusts reference speed units to scene scale)
+  const WORLD_SCALE = 0.1;
 
   useEffect(() => {
     const unsubPos = bodyApi.position.subscribe((p) => {
@@ -46,119 +88,179 @@ const Plane = ({
     return unsubPos;
   }, [bodyApi]);
 
-  const MAX_THROTTLE = 1;
-  const STALL_SPEED_KMH = 35;
-
   useFrame((state, delta) => {
     const k = keys.current;
-    const thrInput = !!k.KeyW;
-    const brakeInput = !!k.KeyS;
-    const bankLeft = !!k.KeyA;
-    const bankRight = !!k.KeyD;
-    const climbInput = !!k.Space || !!k.ArrowUp;
-    const diveInput = !!k.ShiftLeft || !!k.ShiftRight || !!k.ArrowDown;
+    const dt = Math.min(delta, 0.05); // Cap delta to prevent physics explosions
+    const p = physics.current;
+    const inp = input.current;
 
-    if (thrInput) throttle.current = Math.min(MAX_THROTTLE, throttle.current + delta * 0.5);
-    else if (brakeInput) throttle.current = Math.max(0, throttle.current - delta * 0.8);
-    else throttle.current = Math.max(0, throttle.current - delta * 0.1);
+    // ──────────────────────────────────────────────
+    // INPUT PROCESSING (from PlaneController.update)
+    // Inputs are lerped for smooth, non-twitchy control
+    // ──────────────────────────────────────────────
 
-    const [vx, vy, vz] = velocity.current;
-    const currentSpeedMs = Math.sqrt(vx * vx + vy * vy + vz * vz);
-    const currentSpeedKmh = currentSpeedMs * 3.6;
+    // Throttle: W = increase, S = decrease (gradual, like reference accelRate)
+    const accelRate = 0.5;
+    if (k.KeyW) {
+      inp.throttle = Math.min(1, inp.throttle + accelRate * dt);
+    } else if (k.KeyS) {
+      inp.throttle = Math.max(0, inp.throttle - accelRate * dt);
+    }
 
-    simStore.speed = currentSpeedKmh;
+    // Pitch: Space/ArrowDown = climb (nose up), Shift/ArrowUp = dive (nose down)
+    const pitchUp = k.Space || k.ArrowDown;
+    const pitchDown = k.ShiftLeft || k.ShiftRight || k.ArrowUp;
+    const pitchTarget = pitchUp ? 1 : pitchDown ? -1 : 0;
+    inp.pitch = lerp(inp.pitch, pitchTarget, 0.1);
+
+    // Roll: ArrowRight = roll left, ArrowLeft = roll right
+    const rollTarget = k.ArrowRight ? 1 : k.ArrowLeft ? -1 : 0;
+    inp.roll = lerp(inp.roll, rollTarget, 0.1);
+
+    // Yaw: A = turn left, D = turn right
+    const yawTarget = k.KeyA ? 1 : k.KeyD ? -1 : 0;
+    inp.yaw = lerp(inp.yaw, yawTarget, 0.1);
+
+    // Boost: B key (Space is used for pitch in this project)
+    inp.boost = !!k.KeyB;
+
+    // ──────────────────────────────────────────────
+    // PHYSICS UPDATE (from PlanePhysics.update)
+    // ──────────────────────────────────────────────
+
+    // --- Boost logic ---
+    if (p.boostTimeRemaining > 0) {
+      p.boostTimeRemaining -= dt;
+      if (p.boostTimeRemaining <= 0) {
+        p.isBoosting = false;
+        p.boostTimeRemaining = 0;
+      }
+    }
+
+    if (inp.boost) {
+      if (!p.boostPressed && !p.isBoosting) {
+        p.isBoosting = true;
+        p.boostTimeRemaining = p.boostDuration;
+      }
+      p.boostPressed = true;
+    } else {
+      p.boostPressed = false;
+    }
+
+    // --- Speed calculation ---
+    p.throttle = inp.throttle;
+    let targetSpeed = p.minSpeed + (p.throttle * (p.maxSpeed - p.minSpeed));
+
+    if (p.isBoosting) {
+      targetSpeed = p.maxSpeed * p.boostMultiplier;
+    }
+
+    // Speed lerps toward target (smoother than instant changes)
+    p.speed += (targetSpeed - p.speed) * dt * (p.isBoosting ? 4 : 2);
+
+    // --- Control effectiveness (controls are weaker at low speed) ---
+    const controlEffectiveness = p.speed > p.minSpeed ? 1 : (p.speed / p.minSpeed);
+
+    // --- Quaternion-based rotation (core reference physics) ---
+    // Each axis rotation is applied as a local-space quaternion multiplication.
+    // This prevents gimbal lock and gives proper 3D flight behavior.
+    const localPitch = inp.pitch * p.pitchRate * dt * controlEffectiveness;
+    const localRoll = inp.roll * p.rollRate * dt * controlEffectiveness;
+    const localYaw = inp.yaw * p.yawRate * dt * controlEffectiveness;
+
+    const qPitch = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), localPitch);
+    const qRoll = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), localRoll);
+    const qYaw = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), localYaw);
+
+    // Order: yaw → pitch → roll (same as reference)
+    p.quaternion.multiply(qYaw);
+    p.quaternion.multiply(qPitch);
+    p.quaternion.multiply(qRoll);
+    p.quaternion.normalize();
+
+    // Extract Euler angles for HUD display and position calculation
+    const euler = new Euler().setFromQuaternion(p.quaternion, 'YXZ');
+    p.heading = MathUtils.radToDeg(euler.y);
+    p.pitch = MathUtils.radToDeg(euler.x);
+    p.roll = MathUtils.radToDeg(euler.z);
+
+    // ──────────────────────────────────────────────
+    // POSITION UPDATE
+    // Forward direction derived from heading + pitch (matches reference movePosition)
+    // ──────────────────────────────────────────────
+    const headingRad = MathUtils.degToRad(p.heading);
+    const pitchRad = MathUtils.degToRad(p.pitch);
+
+    const moveDistance = p.speed * dt * WORLD_SCALE;
+
+    const dx = moveDistance * Math.sin(headingRad) * Math.cos(pitchRad);
+    const dy = moveDistance * Math.sin(pitchRad);
+    const dz = moveDistance * Math.cos(headingRad) * Math.cos(pitchRad);
+
+    const pos = position.current;
+    const newX = pos.x + dx;
+    const newY = Math.max(0.5, pos.y + dy); // Ground clamp
+    const newZ = pos.z + dz;
+
+    // Apply to physics body
+    bodyApi.position.set(newX, newY, newZ);
+    bodyApi.quaternion.set(p.quaternion.x, p.quaternion.y, p.quaternion.z, p.quaternion.w);
+    bodyApi.velocity.set(0, 0, 0);
+    bodyApi.angularVelocity.set(0, 0, 0);
+
+    // ──────────────────────────────────────────────
+    // SIM STORE UPDATE
+    // ──────────────────────────────────────────────
+    simStore.speed = p.speed;
     simStore.engineState = "on";
-    simStore.gear = Math.ceil(throttle.current * 4) || 0;
-    simStore.rpm = throttle.current * 8000;
-    simStore.altitude = position.current.y;
+    simStore.gear = Math.ceil(p.throttle * 4) || 0;
+    simStore.rpm = p.throttle * 8000;
+    simStore.altitude = newY;
 
-    const isAirborne = position.current.y > 1.5;
-    const airFactor = Math.min(1, currentSpeedKmh / STALL_SPEED_KMH);
-
-    if (bankLeft) yaw.current += delta * airFactor * 1.2;
-    if (bankRight) yaw.current -= delta * airFactor * 1.2;
-
-    if (climbInput) pitch.current = Math.min(Math.PI / 4, pitch.current + delta * 2.0);
-    else if (diveInput) pitch.current = Math.max(-Math.PI / 3, pitch.current - delta * 2.0);
-    else pitch.current += (0 - pitch.current) * Math.min(1, delta * 2);
-
-    if (bankLeft) roll.current = Math.min(0.8, roll.current + delta * 3);
-    else if (bankRight) roll.current = Math.max(-0.8, roll.current - delta * 3);
-    else roll.current += (0 - roll.current) * Math.min(1, delta * 4);
-
-    const forwardDir = new Vector3(
-      Math.sin(yaw.current) * Math.cos(pitch.current),
-      Math.sin(pitch.current),
-      Math.cos(yaw.current) * Math.cos(pitch.current)
-    );
-
-    const thrustForce = throttle.current * 12000;
-    bodyApi.applyForce(
-      [forwardDir.x * thrustForce, forwardDir.y * thrustForce, forwardDir.z * thrustForce],
-      [0, 0, 0]
-    );
-
-    const rho = 1.225;
-    const wingArea = 12;
-    const Cl = 0.9;
-    const Cd0 = 0.04;
-    const kDrag = 0.05;
-
-    const dynamicPressure = 0.5 * rho * currentSpeedMs * currentSpeedMs;
-    const liftMag = dynamicPressure * wingArea * Cl * airFactor * airFactor;
-    const dragCoeff = Cd0 + kDrag * Cl * Cl;
-    const dragMag = dynamicPressure * wingArea * dragCoeff;
-    const groundEffect = position.current.y < 3 ? 1.3 : 1.0;
-
-    if (isAirborne || currentSpeedKmh > STALL_SPEED_KMH) {
-      bodyApi.applyForce([0, liftMag * groundEffect, 0], [0, 0, 0]);
+    // Propeller animation (speed based on throttle)
+    if (propRef.current) {
+      propRef.current.rotation.z += p.throttle * dt * 25;
     }
 
-    if (currentSpeedMs > 0.5) {
-      const dragScale = dragMag / currentSpeedMs;
-      bodyApi.applyForce([
-        -vx * dragScale * 0.8,
-        -vy * dragScale * 0.3,
-        -vz * dragScale * 0.8,
-      ], [0, 0, 0]);
-    }
-
-    if (currentSpeedKmh < STALL_SPEED_KMH && isAirborne) {
-      const stallSeverity = 1 - (currentSpeedKmh / STALL_SPEED_KMH);
-      bodyApi.applyForce([0, -9.82 * 800 * stallSeverity, 0], [0, 0, 0]);
-    }
-
-    if (!isAirborne) {
-      bodyApi.applyForce([-vx * 300, 0, -vz * 300], [0, 0, 0]);
-    }
-
-    const newQuat = new Quaternion();
-    newQuat.setFromEuler(new Euler(-pitch.current, yaw.current, roll.current, 'YXZ'));
-    bodyApi.quaternion.set(newQuat.x, newQuat.y, newQuat.z, newQuat.w);
-
-    if (propRef.current) propRef.current.rotation.z += throttle.current * delta * 25;
-
+    // ──────────────────────────────────────────────
+    // RESET (R key)
+    // ──────────────────────────────────────────────
     if (k.KeyR) {
       bodyApi.position.set(...startPosition);
       bodyApi.velocity.set(0, 0, 0);
       bodyApi.angularVelocity.set(0, 0, 0);
-      throttle.current = 0;
-      pitch.current = 0;
-      roll.current = 0;
-      yaw.current = startRotation[1];
+
+      p.speed = 100;
+      p.throttle = 0.5;
+      p.isBoosting = false;
+      p.boostTimeRemaining = 0;
+      p.boostPressed = false;
+      p.heading = MathUtils.radToDeg(startRotation[1]);
+      p.pitch = 0;
+      p.roll = 0;
+      p.quaternion.setFromEuler(new Euler(0, startRotation[1], 0, 'YXZ'));
+
+      inp.throttle = 0.5;
+      inp.pitch = 0;
+      inp.roll = 0;
+      inp.yaw = 0;
     }
 
+    // ──────────────────────────────────────────────
+    // CAMERA
+    // ──────────────────────────────────────────────
     if (cameraView === 0) return;
-    const pos = position.current;
-    simStore.position = [pos.x, pos.y, pos.z];
+    simStore.position = [newX, newY, newZ];
+
     const camOffset = new Vector3(
-      -Math.sin(yaw.current) * 12,
-      3 - pitch.current * 4,
-      -Math.cos(yaw.current) * 12
+      -Math.sin(headingRad) * 15,
+      5 - pitchRad * 4,
+      -Math.cos(headingRad) * 15
     );
-    const desiredCam = pos.clone().add(camOffset);
-    cameraPos.current.lerp(desiredCam, Math.min(1, delta * 5));
-    cameraTarget.current.lerp(pos, Math.min(1, delta * 5));
+    const desiredCam = new Vector3(newX, newY, newZ).add(camOffset);
+
+    cameraPos.current.lerp(desiredCam, Math.min(1, dt * 5));
+    cameraTarget.current.lerp(new Vector3(newX, newY, newZ), Math.min(1, dt * 5));
     state.camera.position.copy(cameraPos.current);
     state.camera.lookAt(cameraTarget.current);
   });

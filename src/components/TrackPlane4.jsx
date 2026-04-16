@@ -1,6 +1,8 @@
-
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useBox } from "@react-three/cannon";
+import { useFrame } from "@react-three/fiber";
+import { Text, Html } from "@react-three/drei";
+import simStore from "../simStore";
 
 const StaticBox = ({ position, args, color = "#888" }) => {
   useBox(() => ({ type: "Static", args, position }), useRef(null));
@@ -12,132 +14,128 @@ const StaticBox = ({ position, args, color = "#888" }) => {
   );
 };
 
-const GATE_DATA = [
-  { pos: [80, 20, 0],    color: "#00ffcc", radius: 15 },
-  { pos: [160, 50, 0],   color: "#ffdd00", radius: 14 },
-  { pos: [240, 35, 40],  color: "#ff6600", radius: 14 },
-  { pos: [320, 60, -40], color: "#cc44ff", radius: 14 },
-  { pos: [380, 30, 0],   color: "#ff4444", radius: 15 },
-  { pos: [440, 20, 0],   color: "#44ffaa", radius: 15 },
+const CHECKPOINTS = [
+  { pos: [80, 20, 0], radius: 20 },
+  { pos: [160, 50, 0], radius: 20 },
+  { pos: [240, 35, 40], radius: 20 },
+  { pos: [320, 60, -40], radius: 20 },
+  { pos: [380, 30, 0], radius: 20 },
+  { pos: [440, 20, 0], radius: 20 },
 ];
 
-const TrackPlane4 = () => (
-  <>
-    {}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[220, 0, 0]} receiveShadow>
-      <planeGeometry args={[700, 500]} />
-      <meshStandardMaterial color="#5a8a3a" roughness={1} />
-    </mesh>
+const CheckpointRing = ({ position, number, status }) => {
+  const ringRef = useRef();
+  useFrame(() => {
+    if (status === "active" && ringRef.current) ringRef.current.rotation.y += 0.015;
+  });
 
-    {}
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-30, 0.01, 0]} receiveShadow>
-      <planeGeometry args={[80, 24]} />
-      <meshStandardMaterial color="#2a2a2a" roughness={0.85} />
-    </mesh>
-    {Array.from({ length: 5 }).map((_, i) => (
-      <mesh key={`sc${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-62 + i * 14, 0.02, 0]}>
-        <planeGeometry args={[7, 0.4]} />
-        <meshStandardMaterial color="#fff" opacity={0.8} transparent />
+  if (status === "completed") return null;
+
+  const isActive = status === "active";
+  const color = isActive ? "#00ffcc" : "#444444";
+  const emissiveInt = isActive ? 1.5 : 0;
+
+  return (
+    <group position={position}>
+      <mesh ref={ringRef}>
+        <torusGeometry args={[isActive ? 16 : 14, 0.85, 16, 32]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={emissiveInt} transparent opacity={isActive ? 0.8 : 0.2} />
       </mesh>
-    ))}
+      {isActive && (
+        <>
+          <pointLight color={color} intensity={6} distance={40} />
+          <Text position={[0, 22, 0]} fontSize={12} color="#ffffff" outlineWidth={0.4} outlineColor="#000000" anchorX="center" anchorY="middle">
+            {number}
+          </Text>
+        </>
+      )}
+    </group>
+  );
+};
 
-    {}
-    {GATE_DATA.map(({ pos, color }, i) => (
-      <group key={`nm${i}`} position={[pos[0], 0.03, pos[2]]}>
-        {}
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[10, 20]} />
-          <meshStandardMaterial color={color} opacity={0.25} transparent />
-        </mesh>
-        {}
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[10, 0.4, 6, 20]} />
-          <meshStandardMaterial color={color} opacity={0.6} transparent />
-        </mesh>
-      </group>
-    ))}
+const TrackPlane4 = () => {
+  const [activeCp, setActiveCp] = useState(0);
+  const [levelComplete, setLevelComplete] = useState(false);
 
-    {}
-    {GATE_DATA.map(({ pos, color, radius }, i) => (
-      <group key={`gate${i}`} position={pos}>
-        <mesh>
-          <torusGeometry args={[radius, 0.85, 8, 32]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.2} />
-        </mesh>
-        <pointLight color={color} intensity={6} distance={40} />
-        {}
-        <mesh>
-          <sphereGeometry args={[1.0, 8, 8]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} transparent opacity={0.4} />
-        </mesh>
-      </group>
-    ))}
+  useFrame(() => {
+    if (levelComplete) return;
+    const pos = simStore.position;
+    if (!pos || pos.length < 3) return;
 
-    {}
-    {}
-    {[
-      [120, 35, 0], [200, 42, 10], [280, 48, 20], [350, 45, -20], [410, 25, -10],
-    ].map(([x, y, z], i) => (
-      <mesh key={`fl${i}`} position={[x, y, z]}>
-        <sphereGeometry args={[0.6, 8, 8]} />
-        <meshStandardMaterial color="#aaaaff" emissive="#aaaaff" emissiveIntensity={1.5} transparent opacity={0.5} />
-      </mesh>
-    ))}
+    const currentCp = CHECKPOINTS[activeCp];
+    const dist = Math.sqrt(
+      Math.pow(pos[0] - currentCp.pos[0], 2) + Math.pow(pos[1] - currentCp.pos[1], 2) + Math.pow(pos[2] - currentCp.pos[2], 2)
+    );
 
-    {}
-    {}
-    <StaticBox position={[220, 1.5, -90]} args={[440, 3, 12]} color="#7a7a8a" />
-    <StaticBox position={[220, 4.5, -94]} args={[440, 3, 12]} color="#6a6a7a" />
-    <StaticBox position={[220, 7.5, -98]} args={[440, 3, 12]} color="#5a5a6a" />
-    {}
-    {Array.from({ length: 10 }).map((_, i) => (
-      <StaticBox key={`sp${i}`}
-        position={[-100 + i * 45, 3.5, -90]}
-        args={[1, 7, 12]}
-        color="#555566"
-      />
-    ))}
+    if (dist <= currentCp.radius) {
+      if (activeCp < CHECKPOINTS.length - 1) setActiveCp(activeCp + 1);
+      else setLevelComplete(true);
+    }
+  });
 
-    {}
-    <StaticBox position={[220, 5, -108]} args={[20, 10, 10]} color="#6a6a7a" />
-    {}
-    <mesh position={[220, 7, -103]}>
-      <boxGeometry args={[18, 4, 0.4]} />
-      <meshStandardMaterial color="#88aadd" transparent opacity={0.4} />
-    </mesh>
+  return (
+    <>
+      {CHECKPOINTS.map((cp, index) => {
+        let status = "future";
+        if (index === activeCp) status = "active";
+        if (index < activeCp) status = "completed";
+        return <CheckpointRing key={`cp-${index}`} position={cp.pos} number={index + 1} status={status} />;
+      })}
 
-    {}
-    {}
-    <StaticBox position={[220, 1.0, 130]} args={[680, 2, 1.5]} color="#cc2200" />
-    {}
-    <StaticBox position={[220, 1.0, -130]} args={[680, 2, 1.5]} color="#cc2200" />
-
-    {}
-    <StaticBox position={[-5, 6, 14]} args={[0.4, 12, 0.4]} color="#ffdd00" />
-    <StaticBox position={[-5, 6, -14]} args={[0.4, 12, 0.4]} color="#ffdd00" />
-    <mesh position={[-5, 12.2, 0]}>
-      <boxGeometry args={[0.3, 0.3, 28]} />
-      <meshStandardMaterial color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.8} />
-    </mesh>
-    <pointLight position={[-5, 11, 0]} color="#ffdd00" intensity={6} distance={30} />
-
-    {}
-    {[[-180, 0, -80], [-180, 0, 80], [490, 0, -80], [490, 0, 80]].map(([x, y, z], i) => (
-      <group key={`wt${i}`} position={[x, y, z]}>
-        <mesh position={[0, 22, 0]}>
-          <cylinderGeometry args={[0.5, 0.8, 44, 8]} />
-          <meshStandardMaterial color="#ddd" />
-        </mesh>
-        {}
-        {[0, Math.PI * 2 / 3, Math.PI * 4 / 3].map((a, j) => (
-          <mesh key={j} position={[Math.sin(a) * 10, 44 + Math.cos(a) * 10, 0]} rotation={[0, 0, a]}>
-            <boxGeometry args={[1.0, 20, 0.3]} />
-            <meshStandardMaterial color="#eee" />
+      {/* Ground Projection Shadows/Markers based on checkpoints */}
+      {CHECKPOINTS.map(({ pos }, i) => (
+        <group key={`gm${i}`} position={[pos[0], 0.03, pos[2]]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <circleGeometry args={[10, 20]} />
+            <meshStandardMaterial color="#00ffcc" opacity={i === activeCp ? 0.4 : 0.1} transparent />
           </mesh>
-        ))}
-      </group>
-    ))}
-  </>
-);
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[10, 0.4, 6, 20]} />
+            <meshStandardMaterial color="#00ffcc" opacity={i === activeCp ? 0.6 : 0.2} transparent />
+          </mesh>
+        </group>
+      ))}
+
+      {levelComplete && (
+        <Html center zIndexRange={[100, 0]}>
+          <div style={{ background: 'rgba(10, 15, 20, 0.85)', backdropFilter: 'blur(8px)', padding: '40px 60px', borderRadius: '16px', border: '2px solid #00ffcc', boxShadow: '0 0 30px rgba(0, 255, 204, 0.3)', color: '#fff', textAlign: 'center', fontFamily: 'system-ui, sans-serif', width: 'max-content', pointerEvents: 'none' }}>
+            <h1 style={{ margin: '0 0 10px 0', color: '#00ffcc', textTransform: 'uppercase', letterSpacing: '3px', fontSize: '2.5rem' }}>Level Complete</h1>
+            <p style={{ margin: 0, fontSize: '1.2rem', color: '#aaccff' }}>All checkpoints cleared!</p>
+          </div>
+        </Html>
+      )}
+
+      {/* Terrain */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[220, 0, 0]} receiveShadow>
+        <planeGeometry args={[700, 500]} />
+        <meshStandardMaterial color="#5a8a3a" roughness={1} />
+      </mesh>
+
+      <StaticBox position={[220, 1.5, -90]} args={[440, 3, 12]} color="#7a7a8a" />
+      <StaticBox position={[220, 4.5, -94]} args={[440, 3, 12]} color="#6a6a7a" />
+      <StaticBox position={[220, 7.5, -98]} args={[440, 3, 12]} color="#5a5a6a" />
+
+      {Array.from({ length: 10 }).map((_, i) => (
+        <StaticBox key={`sp${i}`} position={[-100 + i * 45, 3.5, -90]} args={[1, 7, 12]} color="#555566" />
+      ))}
+
+      {/* Windmills */}
+      {[[-180, 0, -80], [-180, 0, 80], [490, 0, -80], [490, 0, 80]].map(([x, y, z], i) => (
+        <group key={`wt${i}`} position={[x, y, z]}>
+          <mesh position={[0, 22, 0]}>
+            <cylinderGeometry args={[0.5, 0.8, 44, 8]} />
+            <meshStandardMaterial color="#ddd" />
+          </mesh>
+          {[0, Math.PI * 2 / 3, Math.PI * 4 / 3].map((a, j) => (
+            <mesh key={j} position={[Math.sin(a) * 10, 44 + Math.cos(a) * 10, 0]} rotation={[0, 0, a]}>
+              <boxGeometry args={[1.0, 20, 0.3]} />
+              <meshStandardMaterial color="#eee" />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </>
+  );
+};
 
 export default TrackPlane4;
