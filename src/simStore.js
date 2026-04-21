@@ -15,8 +15,9 @@ const simStore = {
   hornActive: false,
   musicMuted: false,
 
+  // Traffic light violations (real-time HUD display)
+  trafficViolations: 0,
 
-  
   metrics: {
     startTime: 0,
     endTime: 0,
@@ -24,9 +25,9 @@ const simStore = {
     hardBrakes: 0,
     lastSpeed: 0,
     isHardBraking: false,
+    trafficViolations: 0,
   },
 
-  
   touch: {
     KeyW: false,
     KeyS: false,

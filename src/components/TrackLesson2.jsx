@@ -1,5 +1,7 @@
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
+import TrafficLightController from "./TrafficLightController";
+import { TL_STATE } from "./TrafficLight";
 
 const StaticBox = ({ position, args, color = "#888", emissive = "#000", emissiveIntensity = 0 }) => {
   useBox(() => ({ type: "Static", args, position }), useRef(null));
@@ -32,7 +34,7 @@ const StopSign = ({ position, rotation = [0, 0, 0] }) => (
   </group>
 );
 
-const TrackLesson2 = () => (
+const TrackLesson2 = ({ onTrafficViolation }) => (
   <>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[130, 0, 0]} receiveShadow>
       <planeGeometry args={[400, 100]} />
@@ -54,6 +56,7 @@ const TrackLesson2 = () => (
       </mesh>
     ))}
 
+    {/* Zebra crossing at stop area */}
     {[0, 1, 2, 3, 4].map((i) => (
       <mesh key={`sl-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[300, 0.03, -0.5 + i * -1.5]}>
         <planeGeometry args={[0.6, 1.4]} />
@@ -64,6 +67,7 @@ const TrackLesson2 = () => (
     <StopSign position={[300, 0, 3.5]} rotation={[0, -Math.PI / 2, 0]} />
     <StopSign position={[300, 0, -9.5]} rotation={[0, -Math.PI / 2, 0]} />
 
+    {/* Rumble strips */}
     {[286, 288, 290, 292, 294, 296, 298].map((x, i) => (
       <mesh key={`rz-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[x, 0.025, -3]}>
         <planeGeometry args={[0.5, 10]} />
@@ -85,6 +89,40 @@ const TrackLesson2 = () => (
         </group>
       </group>
     ))}
+
+    {/* Traffic light 1 — mid-course, player encounters first */}
+    <TrafficLightController
+      id="tl-lesson2-a"
+      position={[100, 0, 3]}
+      offsets={[[0, 0, 0], [0, 0, -12]]}
+      rotations={[[0, Math.PI, 0], [0, 0, 0]]}
+      redDuration={6}
+      greenDuration={5}
+      yellowDuration={2}
+      stopLineZ={-6}
+      stopLineX={100}
+      stopZoneWidth={12}
+      stopZoneDepth={9}
+      startState={TL_STATE.RED}
+      onViolation={onTrafficViolation}
+    />
+
+    {/* Traffic light 2 — near final stop line */}
+    <TrafficLightController
+      id="tl-lesson2-b"
+      position={[260, 0, 3]}
+      offsets={[[0, 0, 0], [0, 0, -12]]}
+      rotations={[[0, Math.PI, 0], [0, 0, 0]]}
+      redDuration={5}
+      greenDuration={4}
+      yellowDuration={2}
+      stopLineZ={-6}
+      stopLineX={260}
+      stopZoneWidth={12}
+      stopZoneDepth={9}
+      startState={TL_STATE.GREEN}
+      onViolation={onTrafficViolation}
+    />
   </>
 );
 

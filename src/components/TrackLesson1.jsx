@@ -1,5 +1,7 @@
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
+import TrafficLightController from "./TrafficLightController";
+import { TL_STATE } from "./TrafficLight";
 
 const StaticBox = ({ position, args, color = "#888", emissive = "#000", emissiveIntensity = 0 }) => {
   useBox(() => ({ type: "Static", args, position }), useRef(null));
@@ -37,7 +39,7 @@ const StreetLight = ({ position, rotation = [0, 0, 0] }) => (
   </group>
 );
 
-const TrackLesson1 = () => (
+const TrackLesson1 = ({ onTrafficViolation }) => (
   <>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[40, 0, 0]} receiveShadow>
       <planeGeometry args={[200, 100]} />
@@ -52,8 +54,9 @@ const TrackLesson1 = () => (
     <Footpath position={[35, 0.1, 4.5]} args={[110, 0.2, 1.5]} />
     <Footpath position={[35, 0.1, -10.5]} args={[110, 0.2, 1.5]} />
 
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-6, 0.02, -3]}>
-      <planeGeometry args={[0.4, 14]} />
+    {/* Stop line before traffic light */}
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[28, 0.02, -3]}>
+      <planeGeometry args={[0.5, 14]} />
       <meshStandardMaterial color="#ffffff" />
     </mesh>
 
@@ -78,6 +81,7 @@ const TrackLesson1 = () => (
       </group>
     ))}
 
+    {/* Finish gate */}
     <StaticBox position={[80, 2, 4.5]} args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
     <StaticBox position={[80, 2, -10.5]} args={[0.4, 4, 0.4]} color="#ffdd00" emissive="#ffaa00" emissiveIntensity={0.5} />
     <mesh position={[80, 4.2, -3]}>
@@ -91,6 +95,23 @@ const TrackLesson1 = () => (
         <meshStandardMaterial color={i % 2 === 0 ? "#ff3300" : "#ffffff"} />
       </mesh>
     ))}
+
+    {/* Traffic light at ~30m - player must wait for green to proceed */}
+    <TrafficLightController
+      id="tl-lesson1-a"
+      position={[30, 0, 4.5]}
+      offsets={[[0, 0, 0], [0, 0, -15]]}
+      rotations={[[0, Math.PI, 0], [0, 0, 0]]}
+      redDuration={7}
+      greenDuration={6}
+      yellowDuration={2}
+      stopLineZ={-6}
+      stopLineX={30}
+      stopZoneWidth={14}
+      stopZoneDepth={10}
+      startState={TL_STATE.RED}
+      onViolation={onTrafficViolation}
+    />
   </>
 );
 

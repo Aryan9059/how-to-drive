@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import simStore from "../simStore";
 import { GEAR_NAMES, ENGINE_CONFIG, LESSONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
 import TouchControls from "./TouchControls";
@@ -16,22 +16,13 @@ const Gauge = ({ value, max, color, label, unit, redline }) => {
   return (
     <div className="gauge-wrap">
       <svg viewBox="0 0 110 110" width="120" height="120">
-        <circle
-          cx="55" cy="55" r={r}
-          fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="9"
-          strokeDasharray={`${circ * arc} ${circ}`} strokeLinecap="round"
+        <circle cx="55" cy="55" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="9"
+          strokeDasharray={`${circ * arc} ${circ}`} strokeLinecap="round" transform="rotate(135 55 55)" />
+        <circle cx="55" cy="55" r={r} fill="none"
+          stroke={isRed ? "#ef4444" : color} strokeWidth="9"
+          strokeDasharray={`${filled} ${circ}`} strokeLinecap="round"
           transform="rotate(135 55 55)"
-        />
-        <circle
-          cx="55" cy="55" r={r}
-          fill="none"
-          stroke={isRed ? "#ef4444" : color}
-          strokeWidth="9"
-          strokeDasharray={`${filled} ${circ}`}
-          strokeLinecap="round"
-          transform="rotate(135 55 55)"
-          style={{ transition: "stroke-dasharray 0.08s linear" }}
-        />
+          style={{ transition: "stroke-dasharray 0.08s linear" }} />
       </svg>
       <div className="gauge-center">
         <span className="gauge-val">{Math.round(value)}</span>
@@ -63,6 +54,80 @@ const EngineLight = ({ state }) => {
   );
 };
 
+// Traffic Violation Flash
+const TrafficViolationAlert = ({ count }) => {
+  const [visible, setVisible] = useState(false);
+  const prevCount = useRef(0);
+
+  useEffect(() => {
+    if (count > prevCount.current) {
+      prevCount.current = count;
+      setVisible(true);
+      const t = setTimeout(() => setVisible(false), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [count]);
+
+  if (!visible) return null;
+
+  return (
+    <div style={{
+      position: "absolute",
+      top: "80px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      background: "rgba(220, 38, 38, 0.92)",
+      backdropFilter: "blur(12px)",
+      border: "2px solid #ff4444",
+      borderRadius: "12px",
+      padding: "10px 20px",
+      display: "flex",
+      alignItems: "center",
+      gap: "10px",
+      fontSize: "0.9rem",
+      fontWeight: "700",
+      color: "#fff",
+      letterSpacing: "0.05em",
+      zIndex: 70,
+      animation: "toastFade 0.3s ease",
+      boxShadow: "0 4px 24px rgba(220,38,38,0.4)",
+      whiteSpace: "nowrap",
+    }}>
+      <span style={{ fontSize: "1.3rem" }}>🚦</span>
+      RED LIGHT VIOLATION! +Penalty
+      <span style={{
+        background: "rgba(255,255,255,0.2)",
+        borderRadius: "8px",
+        padding: "2px 8px",
+        fontSize: "0.8rem",
+      }}>
+        {count} total
+      </span>
+    </div>
+  );
+};
+
+// Traffic violation counter badge (always visible during lesson)
+const TrafficViolationBadge = ({ count }) => {
+  if (count === 0) return null;
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "6px",
+      padding: "5px 12px",
+      background: count > 0 ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.05)",
+      border: `1px solid ${count > 0 ? "rgba(220,38,38,0.6)" : "rgba(255,255,255,0.1)"}`,
+      borderRadius: "10px",
+      fontSize: "0.8rem",
+      fontWeight: "600",
+      color: count > 0 ? "#ff6666" : "rgba(255,255,255,0.5)",
+    }}>
+      🚦 <span>{count} violation{count !== 1 ? "s" : ""}</span>
+    </div>
+  );
+};
+
 const isTouchDevice = () =>
   typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
@@ -89,6 +154,7 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
   const lesson = lessonId ? allMissions.find((l) => l.id === lessonId) : null;
   const gearName = GEAR_NAMES[tel.gear] ?? "N";
   const touch = isTouchDevice();
+  const violations = tel.trafficViolations || 0;
 
   const getTrackName = () => {
     switch (vehicleType) {
@@ -103,35 +169,11 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
   const getKeyHints = () => {
     switch (vehicleType) {
       case "plane":
-        return [
-          ["W", "Throttle ▲"],
-          ["S", "Throttle ▼"],
-          ["A/D", "Bank L/R"],
-          ["SPACE", "Pitch Up"],
-          ["Shift", "Pitch Down"],
-          ["↑↓", "Pitch"],
-          ["R", "Reset"],
-        ];
+        return [["W", "Throttle ▲"], ["S", "Throttle ▼"], ["A/D", "Bank L/R"], ["SPACE", "Pitch Up"], ["Shift", "Pitch Down"], ["↑↓", "Pitch"], ["R", "Reset"]];
       case "helicopter":
-        return [
-          ["W", "CLIMB ▲"],
-          ["S", "DESCEND ▼"],
-          ["A/D", "Yaw L/R"],
-          ["↑↓", "Fwd/Back"],
-          ["←→", "Strafe L/R"],
-          ["R", "Reset"],
-        ];
+        return [["W", "CLIMB ▲"], ["S", "DESCEND ▼"], ["A/D", "Yaw L/R"], ["↑↓", "Fwd/Back"], ["←→", "Strafe L/R"], ["R", "Reset"]];
       default:
-        return [
-          ["I", "Ignition"],
-          ["W/S", "Throttle/Brake"],
-          ["E/Q", "Gear ▲/▼"],
-          ["C", "Clutch"],
-          ["SPACE", "Handbrake"],
-          ["H", "Headlights"],
-          ["F", "Horn"],
-          ["V", "Camera"],
-        ];
+        return [["I", "Ignition"], ["W/S", "Throttle/Brake"], ["E/Q", "Gear ▲/▼"], ["C", "Clutch"], ["SPACE", "Handbrake"], ["H", "Headlights"], ["F", "Horn"], ["V", "Camera"]];
     }
   };
 
@@ -140,12 +182,17 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
   return (
     <>
       <div className="simhud-root">
+        {/* Headlight alert */}
         {lightAlert.show && (
           <div className="simhud-toast">
             {lightAlert.mode === "ON" ? "💡 HEADLIGHTS ON" : "🔦 HEADLIGHTS OFF"}
           </div>
         )}
 
+        {/* Traffic violation flash */}
+        <TrafficViolationAlert count={violations} />
+
+        {/* Vehicle + lesson badge */}
         <div className="simhud-badge">
           <span className="simhud-vehicle-emoji">{vehicleEmoji}</span>
           {mode === "lesson" && lesson ? (
@@ -156,6 +203,10 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
           ) : (
             <span className="simhud-name">{getTrackName()}</span>
           )}
+          {/* Show violation badge inline in lesson mode */}
+          {mode === "lesson" && violations > 0 && (
+            <TrafficViolationBadge count={violations} />
+          )}
         </div>
 
         {lesson && (
@@ -164,7 +215,6 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
           </div>
         )}
 
-        {/* Global Altitude Badge for Aerial Vehicles */}
         {isAerial && (
           <div className="simhud-altitude">
             <span className="altitude-icon">▲</span>
@@ -183,84 +233,42 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
 
         {!touch && (
           <div className="simhud-panel">
-
-            {/* CAR HUD */}
             {vehicleType === "car" && (
               <>
-                <Gauge
-                  value={tel.rpm / 20}
-                  max={ENGINE_CONFIG.maxRpm / 20}
-                  color="#6366f1"
-                  label="RPM"
-                  unit=""
-                  redline={ENGINE_CONFIG.redlineRpm / 20}
-                />
+                <Gauge value={tel.rpm / 20} max={ENGINE_CONFIG.maxRpm / 20} color="#6366f1" label="RPM" unit="" redline={ENGINE_CONFIG.redlineRpm / 20} />
                 <div className="gear-display">
                   <div className="gear-digit">{gearName}</div>
                   <div className="gear-label">GEAR</div>
                   <EngineLight state={tel.engineState} />
                   <ShiftIndicator rpm={tel.rpm} />
                 </div>
-                <Gauge
-                  value={tel.speed}
-                  max={200}
-                  color="#22d3ee"
-                  label="SPEED"
-                  unit="km/h"
-                />
+                <Gauge value={tel.speed} max={200} color="#22d3ee" label="SPEED" unit="km/h" />
               </>
             )}
 
-            {/* HELICOPTER HUD */}
             {vehicleType === "helicopter" && (
               <>
-                <Gauge
-                  value={(tel.rpm / 8000) * 100}
-                  max={100}
-                  color="#34d399"
-                  label="COLLECTIVE"
-                  unit="%"
-                />
+                <Gauge value={(tel.rpm / 8000) * 100} max={100} color="#34d399" label="COLLECTIVE" unit="%" />
                 <div className="gear-display">
                   <div className="gear-digit" style={{ fontSize: '1.2rem' }}>🚁</div>
                   <div className="gear-label">MODE</div>
                   <EngineLight state={tel.engineState} />
                 </div>
-                <Gauge
-                  value={tel.speed}
-                  max={150}
-                  color="#22d3ee"
-                  label="SPEED"
-                  unit="km/h"
-                />
+                <Gauge value={tel.speed} max={150} color="#22d3ee" label="SPEED" unit="km/h" />
               </>
             )}
 
-            {/* PLANE HUD */}
             {vehicleType === "plane" && (
               <>
-                <Gauge
-                  value={(tel.rpm / 8000) * 100}
-                  max={100}
-                  color="#22d3ee"
-                  label="THROTTLE"
-                  unit="%"
-                />
+                <Gauge value={(tel.rpm / 8000) * 100} max={100} color="#22d3ee" label="THROTTLE" unit="%" />
                 <div className="gear-display">
                   <div className="gear-digit" style={{ fontSize: '1.2rem' }}>✈️</div>
                   <div className="gear-label">STATUS</div>
                   <EngineLight state={tel.engineState} />
                 </div>
-                <Gauge
-                  value={tel.speed}
-                  max={400}
-                  color="#3b82f6"
-                  label="AIRSPEED"
-                  unit="km/h"
-                />
+                <Gauge value={tel.speed} max={400} color="#3b82f6" label="AIRSPEED" unit="km/h" />
               </>
             )}
-
           </div>
         )}
 

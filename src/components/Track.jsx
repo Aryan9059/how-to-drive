@@ -15,16 +15,15 @@ import TrackPlane4 from "./TrackPlane4";
 import TrackHelicopter1 from "./TrackHelicopter1";
 import TrackHelicopter2 from "./TrackHelicopter2";
 
-const Track = ({ levelId = "lesson1" }) => {
+const Track = ({ levelId = "lesson1", onTrafficViolation }) => {
   switch (levelId) {
-
-    case "lesson1": return <TrackLesson1 />;
-    case "lesson2": return <TrackLesson2 />;
+    case "lesson1": return <TrackLesson1 onTrafficViolation={onTrafficViolation} />;
+    case "lesson2": return <TrackLesson2 onTrafficViolation={onTrafficViolation} />;
     case "lesson3": return <TrackLesson3 />;
     case "lesson4": return <TrackLesson4 />;
     case "lesson5": return <TrackLesson5 />;
     case "lesson6": return <HighwayTrack />;
-    case "lesson7": return <TrackLesson7 />;
+    case "lesson7": return <TrackLesson7 onTrafficViolation={onTrafficViolation} />;
     case "lesson8": return <TrackLesson8 />;
     case "lesson9": return <TrackLesson9 />;
 

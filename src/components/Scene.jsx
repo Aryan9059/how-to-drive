@@ -1,6 +1,6 @@
 import { Environment, OrbitControls, PerspectiveCamera } from "@react-three/drei";
 import { Debug, usePlane } from "@react-three/cannon";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import Car from "./Car";
 import Plane from "./Plane";
 import Helicopter from "./Helicopter";
@@ -9,6 +9,7 @@ import Track from "./Track";
 import BarrelContent from "./Barrel";
 import DynamicSky from "./DynamicSky";
 import LessonMonitor from "./LessonMonitor";
+import simStore from "../simStore";
 import { LESSON_CAR_STARTS, TRACK_CAR_STARTS, PLANE_STARTS, HELICOPTER_STARTS } from "../gameConfig";
 
 const debug = false;
@@ -22,10 +23,10 @@ const Scene = ({
   vehicleType = "car",
   onLessonPass,
   onLessonFail,
+  onTrafficViolation,
 }) => {
   const [cameraView, setView] = useState(1);
   const [cameraPos, setCameraPos] = useState([-21, 34, 55]);
-
 
   const getStart = () => {
     if (mode === "freeDrive") {
@@ -66,15 +67,11 @@ const Scene = ({
     }
   };
 
-
   const getFOV = () => {
     if (vehicleType === "plane") return 70;
     if (vehicleType === "helicopter") return 60;
     return 40;
   };
-
-
-  const needsPhysicsGround = vehicleType === "plane" || vehicleType === "helicopter";
 
   const renderVehicle = () => {
     switch (vehicleType) {
@@ -120,9 +117,8 @@ const Scene = ({
 
       {renderVehicle()}
 
-      {}
       {activeTrack === "track1" ? <Ground /> : <PhysicsGround />}
-      <Track levelId={activeTrack} />
+      <Track levelId={activeTrack} onTrafficViolation={onTrafficViolation} />
       {activeTrack === "track1" && <BarrelContent />}
 
       {mode === "lesson" && (

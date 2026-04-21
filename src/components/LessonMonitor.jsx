@@ -23,10 +23,16 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     onFail?.();
   };
 
+  // Traffic violation handler — increments metrics and triggers a HUD flash via simStore
+  const handleTrafficViolation = ({ state, id }) => {
+    // simStore is already updated inside TrafficLightController
+    // Here we just log for debugging
+    console.log(`[TrafficLight] Violation at ${id} — light was ${state}`);
+  };
+
   useFrame((_, delta) => {
     window._simPos = simStore.position;
     window._simSpeed = simStore.speed;
-
 
     if (lessonId === "lesson6") {
       const { speed, gear } = simStore;
@@ -37,15 +43,15 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
         timerRef.current = Math.max(0, timerRef.current - delta * 0.5);
       }
     }
-
-
-
-
   });
 
-
   if (lessonId === "lesson1") {
-    return <Checkpoint position={[80, 1, -3]} radius={4} onTrigger={callPass} />;
+    return (
+      <>
+        <Checkpoint position={[80, 1, -3]} radius={4} onTrigger={callPass} />
+        {/* TrafficLightController is embedded in TrackLesson1, violation callback passed via Track */}
+      </>
+    );
   }
 
   if (lessonId === "lesson2") {
@@ -87,10 +93,7 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     return <Checkpoint position={[74, 1, -3]} radius={6} onTrigger={callPass} />;
   }
 
-
-
   if (lessonId === "plane1") {
-
     return (
       <>
         <Checkpoint position={[50, 15, 0]} radius={14} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 3) callPass(); }} />
@@ -101,7 +104,6 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
   }
 
   if (lessonId === "plane2") {
-
     return (
       <>
         <Checkpoint position={[80, 20, 0]} radius={16} mode3D onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 5) callPass(); }} />
@@ -112,8 +114,6 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
       </>
     );
   }
-
-
 
   if (lessonId === "plane3") {
     return (
@@ -141,9 +141,7 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
     );
   }
 
-
   if (lessonId === "heli1") {
-
     return (
       <>
         <Checkpoint position={[80, 17, 0]} radius={9} mode3D requireStop={true} requiredSpeed={5} onTrigger={() => { gatesPassed.current++; if (gatesPassed.current >= 3) callPass(); }} />
@@ -154,7 +152,6 @@ const LessonMonitor = ({ lessonId, vehicleType = "car", onPass, onFail }) => {
   }
 
   if (lessonId === "heli2") {
-
     return (
       <>
         <Checkpoint position={[-60, 15, -20]} radius={8} mode3D onTrigger={() => { gatesPassed.current++; }} />

@@ -1,5 +1,7 @@
 import { useRef } from "react";
 import { useBox } from "@react-three/cannon";
+import TrafficLightController from "./TrafficLightController";
+import { TL_STATE } from "./TrafficLight";
 
 const StaticBox = ({ position, args, color = "#888", emissive = "#000", emissiveIntensity = 0 }) => {
   useBox(() => ({ type: "Static", args, position }), useRef(null));
@@ -11,13 +13,14 @@ const StaticBox = ({ position, args, color = "#888", emissive = "#000", emissive
   );
 };
 
-const TrackLesson7 = () => (
+const TrackLesson7 = ({ onTrafficViolation }) => (
   <>
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
       <planeGeometry args={[250, 250]} />
       <meshStandardMaterial color="#4a7040" roughness={1} />
     </mesh>
 
+    {/* Roundabout island */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
       <circleGeometry args={[6, 32]} />
       <meshStandardMaterial color="#3a6830" roughness={1} />
@@ -27,11 +30,13 @@ const TrackLesson7 = () => (
       <meshStandardMaterial color="#dddddd" />
     </mesh>
 
+    {/* Roundabout road ring */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, 0]}>
       <ringGeometry args={[6.5, 16, 48]} />
       <meshStandardMaterial color="#2c2c2c" roughness={0.9} />
     </mesh>
 
+    {/* Lane dashes around ring */}
     {Array.from({ length: 24 }).map((_, i) => {
       const angle = (i / 24) * Math.PI * 2;
       const r = 11.25;
@@ -43,7 +48,7 @@ const TrackLesson7 = () => (
       );
     })}
 
-    {}
+    {/* Approach roads */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -66]}>
       <planeGeometry args={[10, 100]} />
       <meshStandardMaterial color="#2c2c2c" roughness={0.9} />
@@ -61,6 +66,7 @@ const TrackLesson7 = () => (
       <meshStandardMaterial color="#2c2c2c" roughness={0.9} />
     </mesh>
 
+    {/* Yield/stop line markings on entries */}
     {[[0, -17], [0, 17], [17, 0], [-17, 0]].map(([x, z], i) => (
       <mesh key={`yl-${i}`} rotation={[-Math.PI / 2, 0, i < 2 ? 0 : Math.PI / 2]} position={[x, 0.03, z]}>
         <planeGeometry args={[10, 0.4]} />
@@ -68,6 +74,7 @@ const TrackLesson7 = () => (
       </mesh>
     ))}
 
+    {/* Gateposts */}
     {[[0, -19], [0, 19], [19, 0], [-19, 0]].map(([x, z], i) => (
       <group key={`gw-${i}`} position={[x + 5.5 * (i === 2 ? 0 : i === 3 ? 0 : 1), 0, z + 5.5 * (i < 2 ? 0 : i === 2 ? -1 : 1)]}>
         <StaticBox position={[0, 1.2, 0]} args={[0.12, 2.4, 0.12]} color="#aaa" />
@@ -78,6 +85,7 @@ const TrackLesson7 = () => (
       </group>
     ))}
 
+    {/* Center island decoration */}
     <mesh position={[0, 0.4, 0]} castShadow>
       <sphereGeometry args={[2.5, 10, 8]} />
       <meshStandardMaterial color="#2a7020" roughness={1} />
@@ -99,6 +107,7 @@ const TrackLesson7 = () => (
       );
     })}
 
+    {/* Lane dashes on approach roads */}
     {Array.from({ length: 20 }).map((_, i) => (
       <>
         <mesh key={`dn-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, -20 + i * 4]}>
@@ -116,6 +125,7 @@ const TrackLesson7 = () => (
       </>
     ))}
 
+    {/* Trees */}
     {Array.from({ length: 35 }).map((_, i) => {
       const a = (i / 35) * Math.PI * 2;
       const r = 85;
@@ -126,6 +136,40 @@ const TrackLesson7 = () => (
         </group>
       );
     })}
+
+    {/* Traffic lights on southern approach (player entry from south) */}
+    <TrafficLightController
+      id="tl-roundabout-south"
+      position={[4.5, 0, -23]}
+      offsets={[[0, 0, 0], [-9, 0, 0]]}
+      rotations={[[0, 0, 0], [0, 0, 0]]}
+      redDuration={7}
+      greenDuration={5}
+      yellowDuration={2}
+      stopLineZ={-19}
+      stopLineX={0}
+      stopZoneWidth={12}
+      stopZoneDepth={8}
+      startState={TL_STATE.RED}
+      onViolation={onTrafficViolation}
+    />
+
+    {/* Traffic lights on east approach */}
+    <TrafficLightController
+      id="tl-roundabout-east"
+      position={[23, 0, -4.5]}
+      offsets={[[0, 0, 0], [0, 0, 9]]}
+      rotations={[[0, -Math.PI / 2, 0], [0, -Math.PI / 2, 0]]}
+      redDuration={8}
+      greenDuration={5}
+      yellowDuration={2}
+      stopLineZ={0}
+      stopLineX={19}
+      stopZoneWidth={12}
+      stopZoneDepth={8}
+      startState={TL_STATE.GREEN}
+      onViolation={onTrafficViolation}
+    />
   </>
 );
 
