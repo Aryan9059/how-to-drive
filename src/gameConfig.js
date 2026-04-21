@@ -283,10 +283,10 @@ export const TRACK_CAR_STARTS = {
 
 
 export const PLANE_STARTS = {
-  plane1: { position: [-90, 1, 0],  rotation: [0, Math.PI / 2, 0] },
+  plane1: { position: [-90, 1, 0], rotation: [0, Math.PI / 2, 0] },
   plane2: { position: [-180, 1, 0], rotation: [0, Math.PI / 2, 0] },
   plane3: { position: [-200, 8, 0], rotation: [0, Math.PI / 2, 0] },
-  plane4: { position: [0, 10, 0],   rotation: [0, Math.PI / 2, 0] },
+  plane4: { position: [0, 10, 0], rotation: [0, Math.PI / 2, 0] },
 };
 
 export const HELICOPTER_STARTS = {
@@ -304,6 +304,7 @@ export const VEHICLE_CATEGORIES = [
     color: "#6366f1",
     missions: null,
     description: "Master the road with manual & automatic car controls.",
+    url: "https://cdn.dribbble.com/userupload/7534469/file/original-229e44e8c40fc85bd435e652cc6abaee.png"
   },
   {
     id: "plane",
@@ -313,6 +314,7 @@ export const VEHICLE_CATEGORIES = [
     color: "#22d3ee",
     missions: "PLANE_MISSIONS",
     description: "Take to the skies and master aerial navigation.",
+    url: "https://static.poly.pizza/13293400-c90f-4cc0-966a-7e07d38f7565.webp"
   },
   {
     id: "helicopter",
@@ -322,5 +324,6 @@ export const VEHICLE_CATEGORIES = [
     color: "#34d399",
     missions: "HELICOPTER_MISSIONS",
     description: "Hover, ascend and navigate vertical flight.",
+    url: "https://media.sketchfab.com/models/5bbed2de9baa4a13a7faa72653b78b64/thumbnails/b4e9e8855aef470fadc920dd3af86d59/f95a6019d08246a58f7160de5940c078.jpeg"
   },
 ];

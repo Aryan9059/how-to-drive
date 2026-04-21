@@ -1,9 +1,146 @@
 import { useSphere } from "@react-three/cannon";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, extend } from "@react-three/fiber";
 import { useRef, useEffect } from "react";
+import { shaderMaterial } from "@react-three/drei";
 import useControls from "../hooks/useControls";
+import * as THREE from "three";
 import { Vector3, Quaternion, Euler } from "three";
 import simStore from "../simStore";
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM GLSL SHADER MATERIAL (OpenGL Shading Language)
+// Uses drei's shaderMaterial for GPU-accelerated helicopter rendering
+// ═══════════════════════════════════════════════════════════════
+
+// --- Helicopter Cabin Shader ---
+// Dynamic metallic paint with animated fresnel glow and iridescence
+const CabinShaderMaterial = shaderMaterial(
+  {
+    uTime: 0,
+    uBaseColor: new THREE.Color("#223344"),
+    uGlowColor: new THREE.Color("#44aaff"),
+    uMetalness: 0.65,
+  },
+  // Vertex Shader (GLSL - OpenGL)
+  /* glsl */ `
+    uniform float uTime;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      vViewDir = normalize(-mvPos.xyz);
+      vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `,
+  // Fragment Shader (GLSL - OpenGL)
+  /* glsl */ `
+    uniform float uTime;
+    uniform vec3 uBaseColor;
+    uniform vec3 uGlowColor;
+    uniform float uMetalness;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+
+    void main() {
+      // Directional lighting (sun from above-right)
+      vec3 lightDir = normalize(vec3(1.0, 2.0, 0.5));
+      float NdotL = max(dot(vNormal, lightDir), 0.0);
+      float diffuse = 0.4 + 0.6 * NdotL;
+
+      // Fresnel rim lighting (classic OpenGL technique)
+      float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 3.5);
+
+      // Animated iridescent color shift based on view angle
+      float iriAngle = dot(vNormal, vViewDir) * 6.2832;
+      float iriShift = sin(iriAngle + uTime * 0.8) * 0.5 + 0.5;
+      vec3 iriColor = mix(uGlowColor, vec3(0.2, 0.6, 1.0), iriShift * 0.5);
+
+      // Specular highlight (Blinn-Phong OpenGL model)
+      vec3 halfDir = normalize(lightDir + vViewDir);
+      float specular = pow(max(dot(vNormal, halfDir), 0.0), 64.0);
+
+      // Fake environment reflection
+      vec3 reflectDir = reflect(-vViewDir, vNormal);
+      float envReflect = smoothstep(-0.2, 1.0, reflectDir.y);
+      vec3 envColor = mix(vec3(0.05, 0.08, 0.12), vec3(0.3, 0.5, 0.7), envReflect);
+
+      // Combine all lighting
+      vec3 color = uBaseColor * diffuse;
+      color += iriColor * fresnel * 1.2;
+      color += vec3(1.0) * specular * 0.4;
+      color += envColor * uMetalness * 0.35;
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `
+);
+
+// --- Tail Boom Energy Pulse Shader ---
+// Animated flowing energy along the tail boom with pulsing glow
+const TailGlowMaterial = shaderMaterial(
+  {
+    uTime: 0,
+    uColor: new THREE.Color("#1a2533"),
+    uPulseColor: new THREE.Color("#00ffaa"),
+  },
+  // Vertex Shader (GLSL - OpenGL)
+  /* glsl */ `
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      vViewDir = normalize(-mvPos.xyz);
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `,
+  // Fragment Shader (GLSL - OpenGL)
+  /* glsl */ `
+    uniform float uTime;
+    uniform vec3 uColor;
+    uniform vec3 uPulseColor;
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+
+    void main() {
+      // Animated energy flow along UV.y (length of the boom)
+      float flow = sin(vUv.y * 20.0 - uTime * 5.0) * 0.5 + 0.5;
+      flow = smoothstep(0.25, 0.75, flow);
+
+      // Circular pulse ring traveling along the boom
+      float ring = sin(vUv.y * 40.0 - uTime * 8.0) * 0.5 + 0.5;
+      ring = pow(ring, 12.0);
+
+      // Fresnel edge glow
+      float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 3.0);
+
+      // Combine dark base with energy pulse
+      vec3 energyColor = mix(uColor, uPulseColor, flow * 0.2 + ring * 0.6);
+      energyColor += uPulseColor * fresnel * 0.4;
+
+      // Breathing pulse
+      float pulse = sin(uTime * 3.0) * 0.08 + 0.92;
+      energyColor *= pulse;
+
+      gl_FragColor = vec4(energyColor, 1.0);
+    }
+  `
+);
+
+// Register shader materials with React Three Fiber's extend system
+extend({ CabinShaderMaterial, TailGlowMaterial });
 
 const Helicopter = ({
   cameraView,
@@ -35,7 +172,9 @@ const Helicopter = ({
 
   const rotorAngle = useRef(0);
   const rotorRef = useRef();
-  const tailRotorRef = useRef(); // Added reference for spinning tail rotor
+  const tailRotorRef = useRef();
+  const cabinShaderRef = useRef(); // Ref for custom GLSL cabin shader material
+  const tailGlowRef = useRef(); // Ref for custom GLSL tail glow shader material
 
   useEffect(() => {
     const unsub = bodyApi.velocity.subscribe((v) => { velocity.current = v; });
@@ -116,6 +255,15 @@ const Helicopter = ({
     if (rotorRef.current) rotorRef.current.rotation.y = rotorAngle.current;
     if (tailRotorRef.current) tailRotorRef.current.rotation.x = rotorAngle.current * 4;
 
+    // Update custom GLSL shader uniforms (OpenGL time animation)
+    const elapsed = state.clock.elapsedTime;
+    if (cabinShaderRef.current) {
+      cabinShaderRef.current.uTime = elapsed;
+    }
+    if (tailGlowRef.current) {
+      tailGlowRef.current.uTime = elapsed;
+    }
+
     if (k.KeyR) {
       bodyApi.position.set(...startPosition);
       bodyApi.velocity.set(0, 0, 0);
@@ -148,10 +296,10 @@ const Helicopter = ({
       {/* UPGRADED VISUAL MODEL */}
       {/* ========================================= */}
 
-      {/* Main Cabin (Aerodynamic stretched sphere) */}
+      {/* Main Cabin — Custom GLSL Metallic Shader (OpenGL) */}
       <mesh castShadow position={[0, 0, 0]} scale={[1.1, 1.3, 2.2]}>
         <sphereGeometry args={[1, 64, 32]} />
-        <meshStandardMaterial color="#223344" metalness={0.6} roughness={0.4} />
+        <cabinShaderMaterial ref={cabinShaderRef} />
       </mesh>
 
       {/* Cockpit Canopy (Refractive Glass) */}
@@ -168,22 +316,22 @@ const Helicopter = ({
         />
       </mesh>
 
-      {/* Tail Boom */}
+      {/* Tail Boom — Custom GLSL Energy Pulse Shader (OpenGL) */}
       <mesh position={[0, 0.3, -2.8]} rotation={[0.03, 0, 0]} castShadow>
         <cylinderGeometry args={[0.2, 0.1, 3.8, 16]} />
-        <meshStandardMaterial color="#1a2533" metalness={0.5} roughness={0.4} />
+        <tailGlowMaterial ref={tailGlowRef} />
       </mesh>
 
-      {/* Tail Fin (Vertical Stabilizer) */}
+      {/* Tail Fin (Vertical Stabilizer) — Custom GLSL Shader (OpenGL) */}
       <mesh position={[0, 0.7, -4.5]} scale={[0.08, 1.2, 0.7]} rotation={[-0.15, 0, 0]} castShadow>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshStandardMaterial color="#223344" metalness={0.5} roughness={0.4} />
+        <cabinShaderMaterial />
       </mesh>
 
-      {/* Tail Wing (Horizontal Stabilizer) */}
+      {/* Tail Wing (Horizontal Stabilizer) — Custom GLSL Shader (OpenGL) */}
       <mesh position={[0, 0.4, -4.2]} scale={[1.2, 0.04, 0.3]} castShadow>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshStandardMaterial color="#1a2533" metalness={0.5} roughness={0.4} />
+        <tailGlowMaterial />
       </mesh>
 
       {/* Main Rotor Mast */}

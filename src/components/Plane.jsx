@@ -1,9 +1,135 @@
 import { useSphere } from "@react-three/cannon";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, extend } from "@react-three/fiber";
 import { useRef, useEffect } from "react";
+import { shaderMaterial } from "@react-three/drei";
 import useControls from "../hooks/useControls";
+import * as THREE from "three";
 import { Vector3, Quaternion, Euler, MathUtils } from "three";
 import simStore from "../simStore";
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM GLSL SHADER MATERIALS (OpenGL Shading Language)
+// Uses drei's shaderMaterial for GPU-accelerated vehicle rendering
+// ═══════════════════════════════════════════════════════════════
+
+// --- Fuselage Holographic Metal Shader ---
+// Simulates iridescent metallic paint with animated fresnel rim glow
+const FuselageShaderMaterial = shaderMaterial(
+  {
+    uTime: 0,
+    uBaseColor: new THREE.Color("#e8edf2"),
+    uFresnelColor: new THREE.Color("#66ccff"),
+    uMetalness: 0.7,
+  },
+  // Vertex Shader (GLSL - OpenGL)
+  /* glsl */ `
+    uniform float uTime;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      vViewDir = normalize(-mvPos.xyz);
+      vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `,
+  // Fragment Shader (GLSL - OpenGL)
+  /* glsl */ `
+    uniform float uTime;
+    uniform vec3 uBaseColor;
+    uniform vec3 uFresnelColor;
+    uniform float uMetalness;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+
+    void main() {
+      // Fresnel rim lighting (classic OpenGL technique)
+      float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 3.0);
+
+      // Iridescent color shift based on view angle
+      float iridescence = sin(dot(vNormal, vViewDir) * 6.2832 + uTime * 0.5) * 0.5 + 0.5;
+      vec3 iriColor = mix(uFresnelColor, vec3(0.6, 0.3, 1.0), iridescence * 0.3);
+
+      // Fake environment reflection
+      float envReflect = smoothstep(0.0, 1.0, dot(reflect(-vViewDir, vNormal), vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5);
+
+      // Combine base color with metallic shading
+      vec3 diffuse = uBaseColor * (0.6 + 0.4 * dot(vNormal, normalize(vec3(1.0, 2.0, 1.0))));
+      vec3 specular = iriColor * fresnel * 1.5;
+      vec3 envColor = mix(vec3(0.1, 0.15, 0.2), vec3(0.6, 0.7, 0.9), envReflect) * uMetalness;
+
+      vec3 finalColor = diffuse + specular + envColor * 0.3;
+
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  `
+);
+
+// --- Accent Energy Stripe Shader ---
+// Animated energy flow along the red accent stripe
+const AccentEnergyMaterial = shaderMaterial(
+  {
+    uTime: 0,
+    uColor: new THREE.Color("#c42b2b"),
+    uGlowColor: new THREE.Color("#ff6644"),
+  },
+  // Vertex Shader (GLSL - OpenGL)
+  /* glsl */ `
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+
+    void main() {
+      vUv = uv;
+      vNormal = normalize(normalMatrix * normal);
+      vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+      vViewDir = normalize(-mvPos.xyz);
+      gl_Position = projectionMatrix * mvPos;
+    }
+  `,
+  // Fragment Shader (GLSL - OpenGL)
+  /* glsl */ `
+    uniform float uTime;
+    uniform vec3 uColor;
+    uniform vec3 uGlowColor;
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+
+    void main() {
+      // Animated energy flow along UV.x
+      float flow = sin(vUv.x * 25.0 - uTime * 4.0) * 0.5 + 0.5;
+      flow = smoothstep(0.3, 0.7, flow);
+
+      // Pulsing scan line
+      float scanLine = sin(vUv.y * 60.0 + uTime * 3.0) * 0.5 + 0.5;
+      scanLine = pow(scanLine, 4.0);
+
+      // Fresnel edge glow
+      float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 2.5);
+
+      // Mix base accent color with energy glow
+      vec3 energyColor = mix(uColor, uGlowColor, flow * 0.4 + scanLine * 0.2);
+      energyColor += uGlowColor * fresnel * 0.5;
+
+      // Subtle brightness pulse
+      float pulse = sin(uTime * 2.5) * 0.1 + 0.9;
+      energyColor *= pulse;
+
+      gl_FragColor = vec4(energyColor, 1.0);
+    }
+  `
+);
+
+// Register shader materials with React Three Fiber's extend system
+extend({ FuselageShaderMaterial, AccentEnergyMaterial });
 
 // Utility: linear interpolation for smooth input (from PlaneController)
 const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
@@ -27,6 +153,8 @@ const Plane = ({
   );
 
   const propRef = useRef();
+  const fuselageShaderRef = useRef();
+  const accentShaderRef = useRef();
   const keys = useControls({});
   const position = useRef(new Vector3(...startPosition));
   const cameraPos = useRef(new Vector3());
@@ -36,10 +164,10 @@ const Plane = ({
   // PLANE PHYSICS STATE (ported from PlanePhysics class)
   // ═══════════════════════════════════════════════════════════
   const physics = useRef({
-    speed: 100,
+    speed: 0,
     maxSpeed: 1000,
     minSpeed: 100,
-    throttle: 0.5,
+    throttle: 0,
     enginePower: 1.2,
     drag: 0.005,
     liftFactor: 0.002,
@@ -71,7 +199,7 @@ const Plane = ({
   // SMOOTHED INPUT STATE (ported from PlaneController class)
   // ═══════════════════════════════════════════════════════════
   const input = useRef({
-    throttle: 0.5,
+    throttle: 0,
     pitch: 0,
     roll: 0,
     yaw: 0,
@@ -149,7 +277,7 @@ const Plane = ({
 
     // --- Speed calculation ---
     p.throttle = inp.throttle;
-    let targetSpeed = p.minSpeed + (p.throttle * (p.maxSpeed - p.minSpeed));
+    let targetSpeed = p.throttle * p.maxSpeed;
 
     if (p.isBoosting) {
       targetSpeed = p.maxSpeed * p.boostMultiplier;
@@ -159,7 +287,7 @@ const Plane = ({
     p.speed += (targetSpeed - p.speed) * dt * (p.isBoosting ? 4 : 2);
 
     // --- Control effectiveness (controls are weaker at low speed) ---
-    const controlEffectiveness = p.speed > p.minSpeed ? 1 : (p.speed / p.minSpeed);
+    const controlEffectiveness = Math.min(1, Math.max(0, p.speed / p.minSpeed));
 
     // --- Quaternion-based rotation (core reference physics) ---
     // Each axis rotation is applied as a local-space quaternion multiplication.
@@ -222,6 +350,15 @@ const Plane = ({
       propRef.current.rotation.z += p.throttle * dt * 25;
     }
 
+    // Update custom GLSL shader uniforms (OpenGL time animation)
+    const elapsed = state.clock.elapsedTime;
+    if (fuselageShaderRef.current) {
+      fuselageShaderRef.current.uTime = elapsed;
+    }
+    if (accentShaderRef.current) {
+      accentShaderRef.current.uTime = elapsed;
+    }
+
     // ──────────────────────────────────────────────
     // RESET (R key)
     // ──────────────────────────────────────────────
@@ -230,8 +367,8 @@ const Plane = ({
       bodyApi.velocity.set(0, 0, 0);
       bodyApi.angularVelocity.set(0, 0, 0);
 
-      p.speed = 100;
-      p.throttle = 0.5;
+      p.speed = 0;
+      p.throttle = 0;
       p.isBoosting = false;
       p.boostTimeRemaining = 0;
       p.boostPressed = false;
@@ -240,7 +377,7 @@ const Plane = ({
       p.roll = 0;
       p.quaternion.setFromEuler(new Euler(0, startRotation[1], 0, 'YXZ'));
 
-      inp.throttle = 0.5;
+      inp.throttle = 0;
       inp.pitch = 0;
       inp.roll = 0;
       inp.yaw = 0;
@@ -271,22 +408,22 @@ const Plane = ({
       {/* UPGRADED VISUAL MODEL */}
       {/* ========================================= */}
 
-      {/* Main Fuselage (Aerodynamic stretched sphere) */}
+      {/* Main Fuselage — Custom GLSL Holographic Metal Shader (OpenGL) */}
       <mesh castShadow position={[0, 0, -0.5]} scale={[0.7, 0.8, 3.5]}>
         <sphereGeometry args={[1, 64, 32]} />
-        <meshStandardMaterial color="#f0f5fa" metalness={0.4} roughness={0.3} />
+        <fuselageShaderMaterial ref={fuselageShaderRef} />
       </mesh>
 
-      {/* Red Accent Paint/Striping */}
+      {/* Red Accent Paint/Striping — Custom GLSL Energy Flow Shader (OpenGL) */}
       <mesh castShadow position={[0, 0, -0.5]} scale={[0.72, 0.3, 3.5]}>
         <sphereGeometry args={[1, 64, 32]} />
-        <meshStandardMaterial color="#c42b2b" metalness={0.5} roughness={0.3} />
+        <accentEnergyMaterial ref={accentShaderRef} />
       </mesh>
 
-      {/* Engine Cowling (Nose) */}
+      {/* Engine Cowling (Nose) — Custom GLSL Shader (OpenGL) */}
       <mesh castShadow position={[0, 0, 2.7]} scale={[0.65, 0.7, 0.8]}>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshStandardMaterial color="#f0f5fa" metalness={0.6} roughness={0.2} />
+        <fuselageShaderMaterial />
       </mesh>
 
       {/* Cockpit Canopy (Refractive Glass) */}

@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import { LESSONS, PLANE_MISSIONS, HELICOPTER_MISSIONS } from "../gameConfig";
 import simStore from "../simStore";
-import { Trophy, XCircle, Lightbulb, Target, Clock, AlertTriangle, Octagon, Play, ArrowLeft, RotateCcw, Check, X, ShieldCheck, Cpu, Zap } from 'lucide-react';
+import { Trophy, XCircle, Lightbulb, Target, Clock, AlertTriangle, Octagon, Play, ArrowLeft, RotateCcw, Check, X, ShieldCheck, Cpu, Zap, MessageSquareWarning } from 'lucide-react';
 
 const allMissions = [...LESSONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
 
@@ -14,6 +15,19 @@ const getMissionsForVehicle = (vehicleType) => {
 
 const vehicleLabel = { car: "LESSON", plane: "FLIGHT MISSION", helicopter: "HELI MISSION" };
 const vehicleReadyLabel = { car: "I'm Ready, Let's Drive!", plane: "Cleared for Takeoff!", helicopter: "Ready to Lift Off!" };
+
+const renderMarkdownText = (text) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index}>{part.slice(2, -2)}</strong>;
+    } else if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={index}>{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
 
 const LessonOverlay = ({
   phase,
@@ -32,6 +46,59 @@ const LessonOverlay = ({
   const hint = difficulty === "easy" ? lesson?.easyHint : lesson?.controlsHint;
   const missionLabel = vehicleLabel[vehicleType] || "LESSON";
 
+  const [instructorFeedback, setInstructorFeedback] = useState("");
+  const [isFetchingFeedback, setIsFetchingFeedback] = useState(false);
+
+  useEffect(() => {
+    if ((phase === "passed" || phase === "failed") && !instructorFeedback && !isFetchingFeedback) {
+      const getFeedback = async () => {
+        setIsFetchingFeedback(true);
+        try {
+          const timeTaken = ((simStore.metrics.endTime - simStore.metrics.startTime) / 1000).toFixed(1);
+          const { mistakes, hardBrakes } = simStore.metrics;
+          const criteria = lesson?.stars || { time: 999, mistakes: 0, hardBrakes: 0 };
+
+          const prompt = `You are a professional and experienced driving/flight instructor. The student has completed the mission: "${lesson?.title}".
+          Result: ${phase.toUpperCase()}
+          Time taken: ${timeTaken}s (Target: ${criteria.time}s)
+          Mistakes/Crashes: ${mistakes} (Target: ${criteria.mistakes})
+          Hard Stops/Jerks: ${hardBrakes} (Target: ${criteria.hardBrakes})
+
+          Provide a concise 2 to 3 sentence evaluation. Be polite, objective, and fact-based. Clearly highlight what was done well, where the student fell short compared to targets, and give one or two specific suggestions for improvement. Avoid exaggeration or harsh language.`;
+          const apiKey = import.meta.env.VITE_MISTRAL_API_KEY;
+          if (!apiKey) {
+            setInstructorFeedback("API Key missing (VITE_MISTRAL_API_KEY). I can't even yell at you properly without it. Fix your environment variables!");
+            setIsFetchingFeedback(false);
+            return;
+          }
+
+          const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: "mistral-tiny",
+              messages: [{ role: "user", content: prompt }]
+            })
+          });
+
+          const data = await res.json();
+          if (data.choices && data.choices[0]) {
+            setInstructorFeedback(data.choices[0].message.content.trim());
+          } else {
+            setInstructorFeedback("I'm speechless. Your performance broke my feedback system.");
+          }
+        } catch (err) {
+          setInstructorFeedback("I'm too angry to speak right now. (Failed to load API)");
+        }
+        setIsFetchingFeedback(false);
+      };
+      getFeedback();
+    }
+  }, [phase, lesson, instructorFeedback, isFetchingFeedback]);
+
   if (phase === "intro") {
     return (
       <div className="overlay-bg overlay-fadein">
@@ -49,8 +116,8 @@ const LessonOverlay = ({
             <p>{lesson?.objective}</p>
           </div>
           <div className="overlay-actions">
-            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onStart}><Play size={18} fill="currentColor"/> Start Mission</button>
-            <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><ArrowLeft size={18}/> Menu</button>
+            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onStart}><Play size={18} fill="currentColor" /> Start Mission</button>
+            <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><ArrowLeft size={18} /> Menu</button>
           </div>
         </div>
       </div>
@@ -66,7 +133,7 @@ const LessonOverlay = ({
           </div>
           <p className="overlay-eyebrow">TRAINING BRIEFING</p>
           <h2 className="overlay-title">{lesson?.title}</h2>
-          
+
           <div className="briefing-grid">
             <div className="briefing-item">
               <div className="briefing-header">
@@ -130,10 +197,19 @@ const LessonOverlay = ({
             <p style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Octagon size={16} /> Hard Stops: <strong>{hardBrakes}</strong> / {criteria.hardBrakes} allowed {starSmooth ? <Check color="#a3e635" size={18} /> : <X color="#f87171" size={18} />}</p>
           </div>
 
-          <div className="overlay-actions">
+          <div className="overlay-instructor-feedback" style={{ marginTop: '15px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
+            <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#ff8a8a', fontWeight: 'bold' }}>
+              <MessageSquareWarning size={18} /> Instructor's Remarks
+            </p>
+            <p style={{ margin: '8px 0 0 0', fontStyle: 'italic', color: '#fca5a5' }}>
+              {isFetchingFeedback ? "Instructor is angrily writing notes..." : <>"{renderMarkdownText(instructorFeedback)}"</>}
+            </p>
+          </div>
+
+          <div className="overlay-actions" style={{ marginTop: '20px' }}>
             {!isLast && <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onNext}>Next Mission <Play size={18} fill="currentColor" /></button>}
-            {isLast && <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><Trophy size={18}/> Back to Menu</button>}
-            <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onRetry}><RotateCcw size={18}/> Retry to Improve</button>
+            {isLast && <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><Trophy size={18} /> Back to Menu</button>}
+            <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onRetry}><RotateCcw size={18} /> Retry to Improve</button>
           </div>
         </div>
       </div>
@@ -152,9 +228,19 @@ const LessonOverlay = ({
             <span className="overlay-hint-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Lightbulb size={16} /> Tip</span>
             <p>{hint}</p>
           </div>
-          <div className="overlay-actions">
-            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onRetry}><RotateCcw size={18}/> Retry Mission</button>
-            <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><ArrowLeft size={18}/> Menu</button>
+
+          <div className="overlay-instructor-feedback" style={{ marginTop: '15px', padding: '12px', background: 'rgba(239, 68, 68, 0.1)', borderLeft: '4px solid #ef4444', borderRadius: '4px' }}>
+            <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#ff8a8a', fontWeight: 'bold' }}>
+              <MessageSquareWarning size={18} /> Instructor's Remarks
+            </p>
+            <p style={{ margin: '8px 0 0 0', fontStyle: 'italic', color: '#fca5a5' }}>
+              {isFetchingFeedback ? "Instructor is screaming internally..." : <>"{renderMarkdownText(instructorFeedback)}"</>}
+            </p>
+          </div>
+
+          <div className="overlay-actions" style={{ marginTop: '20px' }}>
+            <button className="overlay-btn overlay-btn--primary" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onRetry}><RotateCcw size={18} /> Retry Mission</button>
+            <button className="overlay-btn overlay-btn--ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }} onClick={onMenu}><ArrowLeft size={18} /> Menu</button>
           </div>
         </div>
       </div>

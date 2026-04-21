@@ -6,21 +6,21 @@ import * as THREE from "three";
 const DynamicSky = ({ timeOfDay = "day" }) => {
   const sunPos = useMemo(() => {
     switch (timeOfDay) {
-      case "dawn":  return [10, 0.4, -10];
-      case "day":   return [10, 6, 10];
-      case "dusk":  return [-10, 0.4, 0];
+      case "dawn": return [10, 0.4, -10];
+      case "day": return [10, 6, 10];
+      case "dusk": return [-10, 0.4, 0];
       case "night": return [0, -10, 0];
-      default:      return [10, 10, 10];
+      default: return [10, 10, 10];
     }
   }, [timeOfDay]);
 
   const config = useMemo(() => {
     switch (timeOfDay) {
-      case "dawn":  return { turbidity: 10, rayleigh: 3, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.005 };
-      case "day":   return { turbidity: 0.5, rayleigh: 1.5, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.005 };
-      case "dusk":  return { turbidity: 12, rayleigh: 4, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.01 };
+      case "dawn": return { turbidity: 10, rayleigh: 3, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.005 };
+      case "day": return { turbidity: 0.5, rayleigh: 1.5, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.005 };
+      case "dusk": return { turbidity: 12, rayleigh: 4, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.01 };
       case "night": return { turbidity: 1, rayleigh: 0.1, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.001 };
-      default:      return { turbidity: 1, rayleigh: 2, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.005 };
+      default: return { turbidity: 1, rayleigh: 2, inclination: 0.5, azimuth: 0.25, mieCoefficient: 0.005 };
     }
   }, [timeOfDay]);
 

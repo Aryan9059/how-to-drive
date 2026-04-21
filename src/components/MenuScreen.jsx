@@ -29,6 +29,7 @@ const MenuScreen = ({
 }) => {
   const [selectedTod, setSelectedTod] = useState("day");
   const [selectedVehicle, setSelectedVehicle] = useState("car");
+  const [selectedMode, setSelectedMode] = useState("missions");
 
   const isUnlocked = (idx, vehicleId) => {
     if (idx === 0) return true;
@@ -41,12 +42,12 @@ const MenuScreen = ({
     <div className="splash-content">
       <header className="menu-header">
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '30px' }}>
-          <div style={{ 
-            background: 'white', 
-            padding: '20px', 
-            borderRadius: '50%', 
-            display: 'flex', 
-            alignItems: 'center', 
+          <div style={{
+            background: 'white',
+            padding: '20px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
             justifyContent: 'center',
             width: '140px',
             height: '140px',
@@ -75,12 +76,12 @@ const MenuScreen = ({
       </header>
 
       <div className="mode-grid">
-        <div className="mode-card" onClick={() => setMenuStep("missions")}>
+        <div className="mode-card" onClick={() => { setSelectedMode("missions"); setMenuStep("vehicle_selection"); }}>
           <div className="mode-card-icon"><Trophy size={40} /></div>
           <h3 className="mode-card-title">Missions</h3>
           <p className="mode-card-desc">Complete structured driving lessons and earn stars to unlock new challenges.</p>
         </div>
-        <div className="mode-card" onClick={() => setMenuStep("free_roam")}>
+        <div className="mode-card" onClick={() => { setSelectedMode("free_roam"); setMenuStep("vehicle_selection"); }}>
           <div className="mode-card-icon"><Compass size={40} /></div>
           <h3 className="mode-card-title">Free Roam</h3>
           <p className="mode-card-desc">Explore various environments at your own pace without any restrictions.</p>
@@ -93,10 +94,35 @@ const MenuScreen = ({
     </div>
   );
 
+  const renderVehicleSelection = () => (
+    <div className="splash-content" style={{ width: '100%' }}>
+      <header className="menu-header">
+        <h1 className="menu-title" style={{ fontSize: '3rem' }}>Select <span className="menu-title-accent">Vehicle</span></h1>
+        <p className="menu-subtitle">Choose your machine to master.</p>
+      </header>
+
+      <div className="mode-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        {VEHICLE_CATEGORIES.map(v => (
+          <div key={v.id} className="mode-card" onClick={() => { setSelectedVehicle(v.id); setMenuStep(selectedMode); }}>
+            <div style={{ width: '100%', aspectRatio: '1/1', background: '#111', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
+              <img src={v.url} alt={v.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+            <h3 className="mode-card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+              <span className="vehicle-tab-emoji">{v.emoji}</span> {v.label}
+            </h3>
+            <p className="mode-card-desc" style={{ fontSize: '0.9rem' }}>{v.description}</p>
+          </div>
+        ))}
+      </div>
+
+      <button className="menu-back-btn" onClick={() => setMenuStep("mode_selection")}>
+        <ChevronLeft size={18} /> Back
+      </button>
+    </div>
+  );
+
   const currentMissions = getMissionsForVehicle(selectedVehicle);
   const vehicleCategory = VEHICLE_CATEGORIES.find(v => v.id === selectedVehicle);
-
-
   const getControlsHints = () => {
     switch (selectedVehicle) {
       case "plane":
@@ -114,8 +140,8 @@ const MenuScreen = ({
       <div className="menu-bg-glow" />
 
       <div className="menu-inner">
-        <button 
-          className="tod-btn" 
+        <button
+          className="tod-btn"
           onClick={onToggleMusic}
           style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 100 }}
         >
@@ -125,10 +151,11 @@ const MenuScreen = ({
 
         {menuStep === "splash" && renderSplash()}
         {menuStep === "mode_selection" && renderModeSelection()}
+        {menuStep === "vehicle_selection" && renderVehicleSelection()}
 
         {(menuStep === "missions" || menuStep === "free_roam") && (
           <>
-            <button className="menu-back-btn" onClick={() => setMenuStep("mode_selection")}>
+            <button className="menu-back-btn" onClick={() => setMenuStep("vehicle_selection")}>
               <ChevronLeft size={18} /> Back
             </button>
 
@@ -137,28 +164,6 @@ const MenuScreen = ({
                 {menuStep === "missions" ? <>Drive <span className="menu-title-accent">Missions</span></> : <>Free <span className="menu-title-accent">Roam</span></>}
               </h1>
             </header>
-
-            {}
-            {menuStep === "missions" && (
-              <div className="vehicle-tabs">
-                {VEHICLE_CATEGORIES.map((v) => (
-                  <button
-                    key={v.id}
-                    className={`vehicle-tab ${selectedVehicle === v.id ? "vehicle-tab--active" : ""}`}
-                    style={{ "--vtab-color": v.color }}
-                    onClick={() => setSelectedVehicle(v.id)}
-                  >
-                    <span className="vehicle-tab-emoji">{v.emoji}</span>
-                    <span className="vehicle-tab-label">{v.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {}
-            {menuStep === "missions" && vehicleCategory && (
-              <p className="vehicle-desc">{vehicleCategory.description}</p>
-            )}
 
             <div className="diff-toggle">
               <span className="diff-label">Mode:</span>

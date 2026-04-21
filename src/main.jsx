@@ -131,6 +131,8 @@ const App = () => {
           goMenu();
         } else {
           if (menuStep === "missions" || menuStep === "free_roam") {
+            setMenuStep("vehicle_selection");
+          } else if (menuStep === "vehicle_selection") {
             setMenuStep("mode_selection");
           } else if (menuStep === "mode_selection") {
             setMenuStep("splash");
