@@ -18,6 +18,20 @@ const simStore = {
   // Traffic light violations (real-time HUD display)
   trafficViolations: 0,
 
+  // ── Plane-specific telemetry ──────────────────────────────────
+  throttle: 0,        // 0-1
+  flaps: 0,           // 0-4 (notches)
+  gearDown: true,     // landing gear extended
+  brakeActive: false,
+
+  // Attitude (degrees)
+  planePitch: 0,
+  planeRoll: 0,
+  planeHeading: 0,    // 0-360
+
+  // Rates
+  verticalSpeed: 0,   // m/s (positive = climbing)
+
   metrics: {
     startTime: 0,
     endTime: 0,

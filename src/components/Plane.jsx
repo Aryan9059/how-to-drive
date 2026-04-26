@@ -1,6 +1,6 @@
 import { useSphere } from "@react-three/cannon";
 import { useFrame, extend } from "@react-three/fiber";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { shaderMaterial } from "@react-three/drei";
 import useControls from "../hooks/useControls";
 import * as THREE from "three";
@@ -13,7 +13,6 @@ import simStore from "../simStore";
 // ═══════════════════════════════════════════════════════════════
 
 // --- Fuselage Holographic Metal Shader ---
-// Simulates iridescent metallic paint with animated fresnel rim glow
 const FuselageShaderMaterial = shaderMaterial(
   {
     uTime: 0,
@@ -21,7 +20,6 @@ const FuselageShaderMaterial = shaderMaterial(
     uFresnelColor: new THREE.Color("#66ccff"),
     uMetalness: 0.7,
   },
-  // Vertex Shader (GLSL - OpenGL)
   /* glsl */ `
     uniform float uTime;
     varying vec3 vNormal;
@@ -38,7 +36,6 @@ const FuselageShaderMaterial = shaderMaterial(
       gl_Position = projectionMatrix * mvPos;
     }
   `,
-  // Fragment Shader (GLSL - OpenGL)
   /* glsl */ `
     uniform float uTime;
     uniform vec3 uBaseColor;
@@ -50,37 +47,26 @@ const FuselageShaderMaterial = shaderMaterial(
     varying vec3 vWorldPos;
 
     void main() {
-      // Fresnel rim lighting (classic OpenGL technique)
       float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 3.0);
-
-      // Iridescent color shift based on view angle
       float iridescence = sin(dot(vNormal, vViewDir) * 6.2832 + uTime * 0.5) * 0.5 + 0.5;
       vec3 iriColor = mix(uFresnelColor, vec3(0.6, 0.3, 1.0), iridescence * 0.3);
-
-      // Fake environment reflection
       float envReflect = smoothstep(0.0, 1.0, dot(reflect(-vViewDir, vNormal), vec3(0.0, 1.0, 0.0)) * 0.5 + 0.5);
-
-      // Combine base color with metallic shading
       vec3 diffuse = uBaseColor * (0.6 + 0.4 * dot(vNormal, normalize(vec3(1.0, 2.0, 1.0))));
       vec3 specular = iriColor * fresnel * 1.5;
       vec3 envColor = mix(vec3(0.1, 0.15, 0.2), vec3(0.6, 0.7, 0.9), envReflect) * uMetalness;
-
       vec3 finalColor = diffuse + specular + envColor * 0.3;
-
       gl_FragColor = vec4(finalColor, 1.0);
     }
   `
 );
 
 // --- Accent Energy Stripe Shader ---
-// Animated energy flow along the red accent stripe
 const AccentEnergyMaterial = shaderMaterial(
   {
     uTime: 0,
     uColor: new THREE.Color("#c42b2b"),
     uGlowColor: new THREE.Color("#ff6644"),
   },
-  // Vertex Shader (GLSL - OpenGL)
   /* glsl */ `
     varying vec2 vUv;
     varying vec3 vNormal;
@@ -94,7 +80,6 @@ const AccentEnergyMaterial = shaderMaterial(
       gl_Position = projectionMatrix * mvPos;
     }
   `,
-  // Fragment Shader (GLSL - OpenGL)
   /* glsl */ `
     uniform float uTime;
     uniform vec3 uColor;
@@ -104,42 +89,35 @@ const AccentEnergyMaterial = shaderMaterial(
     varying vec3 vViewDir;
 
     void main() {
-      // Animated energy flow along UV.x
       float flow = sin(vUv.x * 25.0 - uTime * 4.0) * 0.5 + 0.5;
       flow = smoothstep(0.3, 0.7, flow);
-
-      // Pulsing scan line
       float scanLine = sin(vUv.y * 60.0 + uTime * 3.0) * 0.5 + 0.5;
       scanLine = pow(scanLine, 4.0);
-
-      // Fresnel edge glow
       float fresnel = pow(1.0 - abs(dot(vNormal, vViewDir)), 2.5);
-
-      // Mix base accent color with energy glow
       vec3 energyColor = mix(uColor, uGlowColor, flow * 0.4 + scanLine * 0.2);
       energyColor += uGlowColor * fresnel * 0.5;
-
-      // Subtle brightness pulse
       float pulse = sin(uTime * 2.5) * 0.1 + 0.9;
       energyColor *= pulse;
-
       gl_FragColor = vec4(energyColor, 1.0);
     }
   `
 );
 
-// Register shader materials with React Three Fiber's extend system
 extend({ FuselageShaderMaterial, AccentEnergyMaterial });
 
-// Utility: linear interpolation for smooth input (from PlaneController)
 const lerp = (start, end, amt) => (1 - amt) * start + amt * end;
 
+// ── Flap Notches ─────────────────────────────────────────────
+// Notch 0 = 0°, 1 = 10°, 2 = 20°, 3 = 30°, 4 = 40°
+const FLAP_ANGLES = [0, 10, 20, 30, 40];
+const FLAP_DRAG   = [0, 0.005, 0.012, 0.022, 0.035];
+const FLAP_LIFT   = [0, 0.0005, 0.001, 0.0014, 0.0016];
+
 const Plane = ({
-  cameraView,
+  cameraView: _cameraView, // accepted for compatibility; camera managed internally via C key
   startPosition = [0, 5, 0],
   startRotation = [0, Math.PI / 2, 0],
 }) => {
-  // Kinematic body — we drive position & rotation directly (matches reference approach)
   const [body, bodyApi] = useSphere(
     () => ({
       mass: 0,
@@ -152,216 +130,224 @@ const Plane = ({
     useRef(null)
   );
 
-  const propRef = useRef();
-  const fuselageShaderRef = useRef();
-  const accentShaderRef = useRef();
-  const keys = useControls({});
-  const position = useRef(new Vector3(...startPosition));
-  const cameraPos = useRef(new Vector3());
-  const cameraTarget = useRef(new Vector3());
+  const propRef       = useRef();
+  const fuselageRef   = useRef();
+  const accentRef     = useRef();
+  const leftFlapRef   = useRef();
+  const rightFlapRef  = useRef();
+  const gearGroupRef  = useRef();
+  const keys          = useControls({});
+  const position      = useRef(new Vector3(...startPosition));
+  const cameraPos     = useRef(new Vector3());
+  const cameraTarget  = useRef(new Vector3());
 
-  // ═══════════════════════════════════════════════════════════
-  // PLANE PHYSICS STATE (ported from PlanePhysics class)
-  // ═══════════════════════════════════════════════════════════
+  // ── camera mode: 0=chase, 1=cockpit, 2=chase-high ───────────
+  const cameraMode    = useRef(0);
+  const camKeyHeld    = useRef(false);
+
+  // ── one-shot toggle trackers ─────────────────────────────────
+  const gearKeyHeld   = useRef(false);
+  const flapUpHeld    = useRef(false);
+  const flapDnHeld    = useRef(false);
+  const brakeHeld     = useRef(false);
+
+  // ── Physics state ─────────────────────────────────────────────
   const physics = useRef({
     speed: 0,
-    maxSpeed: 1000,
-    minSpeed: 100,
+    maxSpeed: 900,          // km/h equivalent
     throttle: 0,
-    enginePower: 1.2,
-    drag: 0.005,
-    liftFactor: 0.002,
+    enginePower: 1.4,
+    drag: 0.004,
+    liftFactor: 0.0025,
     gravity: 9.8,
 
-    pitch: 0,    // degrees
-    roll: 0,     // degrees
+    pitch: 0,
+    roll: 0,
     heading: MathUtils.radToDeg(startRotation[1]),
 
-    pitchRate: 1.2,
-    rollRate: 2.5,
-    yawRate: 0.5,
+    pitchRate: 1.4,
+    rollRate:  2.8,
+    yawRate:   0.6,
 
-    // Boost system
-    isBoosting: false,
-    boostTimeRemaining: 0,
-    boostDuration: 2.5,
-    boostMultiplier: 1.5,
-    boostRotations: 2,
-    boostPressed: false,
+    flaps: 0,        // notch index 0-4
+    gearDown: true,
+    brakeActive: false,
+    prevAlt: startPosition[1],
 
-    // Quaternion-based orientation (core of the reference physics)
     quaternion: new Quaternion().setFromEuler(
       new Euler(0, startRotation[1], 0, 'YXZ')
     ),
   });
 
-  // ═══════════════════════════════════════════════════════════
-  // SMOOTHED INPUT STATE (ported from PlaneController class)
-  // ═══════════════════════════════════════════════════════════
-  const input = useRef({
-    throttle: 0,
-    pitch: 0,
-    roll: 0,
-    yaw: 0,
-    boost: false,
-  });
+  // ── Smoothed input ────────────────────────────────────────────
+  const input = useRef({ throttle: 0, pitch: 0, roll: 0, yaw: 0 });
 
-  // World-space movement scale (adjusts reference speed units to scene scale)
   const WORLD_SCALE = 0.1;
 
   useEffect(() => {
-    const unsubPos = bodyApi.position.subscribe((p) => {
-      position.current.set(p[0], p[1], p[2]);
-    });
-    return unsubPos;
+    const unsub = bodyApi.position.subscribe((p) =>
+      position.current.set(p[0], p[1], p[2])
+    );
+    return unsub;
   }, [bodyApi]);
 
   useFrame((state, delta) => {
-    const k = keys.current;
-    const dt = Math.min(delta, 0.05); // Cap delta to prevent physics explosions
-    const p = physics.current;
+    const k   = keys.current;
+    const dt  = Math.min(delta, 0.05);
+    const p   = physics.current;
     const inp = input.current;
 
-    // ──────────────────────────────────────────────
-    // INPUT PROCESSING (from PlaneController.update)
-    // Inputs are lerped for smooth, non-twitchy control
-    // ──────────────────────────────────────────────
-
-    // Throttle: W = increase, S = decrease (gradual, like reference accelRate)
-    const accelRate = 0.5;
+    // ── Throttle: W = increase, S = decrease ─────────────────
+    const accelRate = 0.45;
     if (k.KeyW) {
       inp.throttle = Math.min(1, inp.throttle + accelRate * dt);
     } else if (k.KeyS) {
-      inp.throttle = Math.max(0, inp.throttle - accelRate * dt);
+      // Brake reduces throttle faster when brake held too
+      const rate = p.brakeActive ? accelRate * 2.5 : accelRate;
+      inp.throttle = Math.max(0, inp.throttle - rate * dt);
     }
 
-    // Pitch: Space/ArrowDown = climb (nose up), Shift/ArrowUp = dive (nose down)
-    const pitchUp = k.Space || k.ArrowDown;
-    const pitchDown = k.ShiftLeft || k.ShiftRight || k.ArrowUp;
-    const pitchTarget = pitchUp ? 1 : pitchDown ? -1 : 0;
-    inp.pitch = lerp(inp.pitch, pitchTarget, 0.1);
+    // ── Pitch: Arrow Up = nose up, Arrow Down = nose down ────
+    const pitchTarget = k.ArrowUp ? 1 : k.ArrowDown ? -1 : 0;
+    inp.pitch = lerp(inp.pitch, pitchTarget, 0.12);
 
-    // Roll: ArrowRight = roll left, ArrowLeft = roll right
-    const rollTarget = k.ArrowRight ? 1 : k.ArrowLeft ? -1 : 0;
-    inp.roll = lerp(inp.roll, rollTarget, 0.1);
+    // ── Roll: Arrow Left = roll left, Arrow Right = roll right
+    const rollTarget = k.ArrowLeft ? -1 : k.ArrowRight ? 1 : 0;
+    inp.roll = lerp(inp.roll, rollTarget, 0.12);
 
-    // Yaw: A = turn left, D = turn right
+    // ── Yaw (rudder): A = left, D = right ────────────────────
     const yawTarget = k.KeyA ? 1 : k.KeyD ? -1 : 0;
-    inp.yaw = lerp(inp.yaw, yawTarget, 0.1);
+    inp.yaw = lerp(inp.yaw, yawTarget, 0.12);
 
-    // Boost: B key (Space is used for pitch in this project)
-    inp.boost = !!k.KeyB;
+    // ── Brake: B ─────────────────────────────────────────────
+    p.brakeActive = !!k.KeyB;
 
-    // ──────────────────────────────────────────────
-    // PHYSICS UPDATE (from PlanePhysics.update)
-    // ──────────────────────────────────────────────
-
-    // --- Boost logic ---
-    if (p.boostTimeRemaining > 0) {
-      p.boostTimeRemaining -= dt;
-      if (p.boostTimeRemaining <= 0) {
-        p.isBoosting = false;
-        p.boostTimeRemaining = 0;
-      }
+    // ── Flaps: F = increase (one notch), G = decrease ────────
+    if (k.KeyF && !flapUpHeld.current) {
+      flapUpHeld.current = true;
+      p.flaps = Math.min(4, p.flaps + 1);
     }
+    if (!k.KeyF) flapUpHeld.current = false;
 
-    if (inp.boost) {
-      if (!p.boostPressed && !p.isBoosting) {
-        p.isBoosting = true;
-        p.boostTimeRemaining = p.boostDuration;
-      }
-      p.boostPressed = true;
-    } else {
-      p.boostPressed = false;
+    if (k.KeyG && !flapDnHeld.current) {
+      flapDnHeld.current = true;
+      p.flaps = Math.max(0, p.flaps - 1);
     }
+    if (!k.KeyG) flapDnHeld.current = false;
 
-    // --- Speed calculation ---
+    // ── Landing gear: L = toggle ─────────────────────────────
+    if (k.KeyL && !gearKeyHeld.current) {
+      gearKeyHeld.current = true;
+      p.gearDown = !p.gearDown;
+    }
+    if (!k.KeyL) gearKeyHeld.current = false;
+
+    // ── Camera: C = cycle views ───────────────────────────────
+    if (k.KeyC && !camKeyHeld.current) {
+      camKeyHeld.current = true;
+      cameraMode.current = (cameraMode.current + 1) % 3;
+    }
+    if (!k.KeyC) camKeyHeld.current = false;
+
+    // ── Physics ───────────────────────────────────────────────
     p.throttle = inp.throttle;
     let targetSpeed = p.throttle * p.maxSpeed;
 
-    if (p.isBoosting) {
-      targetSpeed = p.maxSpeed * p.boostMultiplier;
+    // Brake friction (aerodynamic + wheel if gear down)
+    let brakeFriction = 0;
+    if (p.brakeActive) {
+      brakeFriction = p.gearDown ? 60 : 15;
     }
 
-    // Speed lerps toward target (smoother than instant changes)
-    p.speed += (targetSpeed - p.speed) * dt * (p.isBoosting ? 4 : 2);
+    p.speed += ((targetSpeed - p.speed) * dt * 1.8) - brakeFriction * dt;
+    p.speed = Math.max(0, p.speed);
 
-    // --- Control effectiveness (controls are weaker at low speed) ---
-    const controlEffectiveness = Math.min(1, Math.max(0, p.speed / p.minSpeed));
+    // Flap effects on drag
+    const flapDrag = FLAP_DRAG[p.flaps];
+    const extraDrag = p.speed * flapDrag;
+    p.speed = Math.max(0, p.speed - extraDrag * dt * 30);
 
-    // --- Quaternion-based rotation (core reference physics) ---
-    // Each axis rotation is applied as a local-space quaternion multiplication.
-    // This prevents gimbal lock and gives proper 3D flight behavior.
+    // Control effectiveness (controls are sluggish at low speed)
+    const controlEffectiveness = Math.min(1, Math.max(0, p.speed / 120));
+
+    // Quaternion rotation
     const localPitch = inp.pitch * p.pitchRate * dt * controlEffectiveness;
-    const localRoll = inp.roll * p.rollRate * dt * controlEffectiveness;
-    const localYaw = inp.yaw * p.yawRate * dt * controlEffectiveness;
+    const localRoll  = inp.roll  * p.rollRate  * dt * controlEffectiveness;
+    const localYaw   = inp.yaw   * p.yawRate   * dt * controlEffectiveness;
 
     const qPitch = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), localPitch);
-    const qRoll = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), localRoll);
-    const qYaw = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), localYaw);
+    const qRoll  = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), localRoll);
+    const qYaw   = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), localYaw);
 
-    // Order: yaw → pitch → roll (same as reference)
-    p.quaternion.multiply(qYaw);
-    p.quaternion.multiply(qPitch);
-    p.quaternion.multiply(qRoll);
-    p.quaternion.normalize();
+    p.quaternion.multiply(qYaw).multiply(qPitch).multiply(qRoll).normalize();
 
-    // Extract Euler angles for HUD display and position calculation
     const euler = new Euler().setFromQuaternion(p.quaternion, 'YXZ');
     p.heading = MathUtils.radToDeg(euler.y);
-    p.pitch = MathUtils.radToDeg(euler.x);
-    p.roll = MathUtils.radToDeg(euler.z);
+    p.pitch   = MathUtils.radToDeg(euler.x);
+    p.roll    = MathUtils.radToDeg(euler.z);
 
-    // ──────────────────────────────────────────────
-    // POSITION UPDATE
-    // Forward direction derived from heading + pitch (matches reference movePosition)
-    // ──────────────────────────────────────────────
+    // Position update
     const headingRad = MathUtils.degToRad(p.heading);
-    const pitchRad = MathUtils.degToRad(p.pitch);
+    const pitchRad   = MathUtils.degToRad(p.pitch);
+    const moveDist   = p.speed * dt * WORLD_SCALE;
 
-    const moveDistance = p.speed * dt * WORLD_SCALE;
+    const dx = moveDist * Math.sin(headingRad) * Math.cos(pitchRad);
+    const dy = moveDist * Math.sin(pitchRad);
+    const dz = moveDist * Math.cos(headingRad) * Math.cos(pitchRad);
 
-    const dx = moveDistance * Math.sin(headingRad) * Math.cos(pitchRad);
-    const dy = moveDistance * Math.sin(pitchRad);
-    const dz = moveDistance * Math.cos(headingRad) * Math.cos(pitchRad);
-
-    const pos = position.current;
+    const pos  = position.current;
     const newX = pos.x + dx;
-    const newY = Math.max(0.5, pos.y + dy); // Ground clamp
+    const newY = Math.max(0.5, pos.y + dy);
     const newZ = pos.z + dz;
 
-    // Apply to physics body
     bodyApi.position.set(newX, newY, newZ);
     bodyApi.quaternion.set(p.quaternion.x, p.quaternion.y, p.quaternion.z, p.quaternion.w);
     bodyApi.velocity.set(0, 0, 0);
     bodyApi.angularVelocity.set(0, 0, 0);
 
-    // ──────────────────────────────────────────────
-    // SIM STORE UPDATE
-    // ──────────────────────────────────────────────
-    simStore.speed = p.speed;
+    // Vertical speed (m/s)
+    const vsi = (newY - p.prevAlt) / dt;
+    p.prevAlt = newY;
+
+    // ── SimStore update ───────────────────────────────────────
+    simStore.speed       = p.speed;
     simStore.engineState = "on";
-    simStore.gear = Math.ceil(p.throttle * 4) || 0;
-    simStore.rpm = p.throttle * 8000;
-    simStore.altitude = newY;
+    simStore.gear        = Math.ceil(p.throttle * 4) || 0;
+    simStore.rpm         = p.throttle * 8000;
+    simStore.altitude    = newY;
+    simStore.throttle    = p.throttle;
+    simStore.flaps       = p.flaps;
+    simStore.gearDown    = p.gearDown;
+    simStore.brakeActive = p.brakeActive;
+    simStore.planePitch  = p.pitch;
+    simStore.planeRoll   = p.roll;
+    // Normalize heading to 0-360
+    simStore.planeHeading = ((p.heading % 360) + 360) % 360;
+    simStore.verticalSpeed = vsi;
+    simStore.position    = [newX, newY, newZ];
 
-    // Propeller animation (speed based on throttle)
+    // ── Propeller animation ───────────────────────────────────
     if (propRef.current) {
-      propRef.current.rotation.z += p.throttle * dt * 25;
+      propRef.current.rotation.z += (0.2 + p.throttle * 0.8) * dt * 30;
     }
 
-    // Update custom GLSL shader uniforms (OpenGL time animation)
+    // ── Flap visual angle ─────────────────────────────────────
+    const flapAngleRad = MathUtils.degToRad(FLAP_ANGLES[p.flaps]);
+    if (leftFlapRef.current)  leftFlapRef.current.rotation.x  =  flapAngleRad * 0.6;
+    if (rightFlapRef.current) rightFlapRef.current.rotation.x =  flapAngleRad * 0.6;
+
+    // ── Landing gear visual ───────────────────────────────────
+    if (gearGroupRef.current) {
+      const targetY = p.gearDown ? 0 : 0.9;
+      gearGroupRef.current.position.y = lerp(gearGroupRef.current.position.y, targetY, 0.1);
+    }
+
+    // ── GLSL shader time uniforms ─────────────────────────────
     const elapsed = state.clock.elapsedTime;
-    if (fuselageShaderRef.current) {
-      fuselageShaderRef.current.uTime = elapsed;
-    }
-    if (accentShaderRef.current) {
-      accentShaderRef.current.uTime = elapsed;
-    }
+    if (fuselageRef.current) fuselageRef.current.uTime = elapsed;
+    if (accentRef.current)   accentRef.current.uTime   = elapsed;
 
-    // ──────────────────────────────────────────────
-    // RESET (R key)
-    // ──────────────────────────────────────────────
+    // ── Reset ─────────────────────────────────────────────────
     if (k.KeyR) {
       bodyApi.position.set(...startPosition);
       bodyApi.velocity.set(0, 0, 0);
@@ -369,12 +355,13 @@ const Plane = ({
 
       p.speed = 0;
       p.throttle = 0;
-      p.isBoosting = false;
-      p.boostTimeRemaining = 0;
-      p.boostPressed = false;
+      p.flaps = 0;
+      p.gearDown = true;
+      p.brakeActive = false;
       p.heading = MathUtils.radToDeg(startRotation[1]);
       p.pitch = 0;
       p.roll = 0;
+      p.prevAlt = startPosition[1];
       p.quaternion.setFromEuler(new Euler(0, startRotation[1], 0, 'YXZ'));
 
       inp.throttle = 0;
@@ -383,50 +370,68 @@ const Plane = ({
       inp.yaw = 0;
     }
 
-    // ──────────────────────────────────────────────
-    // CAMERA
-    // ──────────────────────────────────────────────
-    if (cameraView === 0) return;
-    simStore.position = [newX, newY, newZ];
-
-    const camOffset = new Vector3(
-      -Math.sin(headingRad) * 15,
-      5 - pitchRad * 4,
-      -Math.cos(headingRad) * 15
-    );
-    const desiredCam = new Vector3(newX, newY, newZ).add(camOffset);
-
-    cameraPos.current.lerp(desiredCam, Math.min(1, dt * 5));
-    cameraTarget.current.lerp(new Vector3(newX, newY, newZ), Math.min(1, dt * 5));
-    state.camera.position.copy(cameraPos.current);
-    state.camera.lookAt(cameraTarget.current);
+    // ── Camera ────────────────────────────────────────────────
+    const mode = cameraMode.current;
+    if (mode === 0) {
+      // Chase cam — behind & above
+      const camOffset = new Vector3(
+        -Math.sin(headingRad) * 18,
+        6 - pitchRad * 5,
+        -Math.cos(headingRad) * 18
+      );
+      const desiredCam = new Vector3(newX, newY, newZ).add(camOffset);
+      cameraPos.current.lerp(desiredCam, Math.min(1, dt * 4));
+      cameraTarget.current.lerp(new Vector3(newX, newY, newZ), Math.min(1, dt * 6));
+      state.camera.position.copy(cameraPos.current);
+      state.camera.lookAt(cameraTarget.current);
+    } else if (mode === 1) {
+      // Cockpit / nose cam
+      const fwd = new Vector3(
+        Math.sin(headingRad) * Math.cos(pitchRad),
+        Math.sin(pitchRad),
+        Math.cos(headingRad) * Math.cos(pitchRad)
+      );
+      const camPos = new Vector3(newX, newY + 0.8, newZ).addScaledVector(fwd, 2.5);
+      cameraPos.current.lerp(camPos, Math.min(1, dt * 12));
+      cameraTarget.current.lerp(new Vector3(newX, newY, newZ).addScaledVector(fwd, 20), Math.min(1, dt * 12));
+      state.camera.position.copy(cameraPos.current);
+      state.camera.lookAt(cameraTarget.current);
+    } else {
+      // High-altitude / orbit cam
+      const camOffset = new Vector3(
+        -Math.sin(headingRad) * 30,
+        20,
+        -Math.cos(headingRad) * 30
+      );
+      const desiredCam = new Vector3(newX, newY, newZ).add(camOffset);
+      cameraPos.current.lerp(desiredCam, Math.min(1, dt * 2.5));
+      cameraTarget.current.lerp(new Vector3(newX, newY, newZ), Math.min(1, dt * 3));
+      state.camera.position.copy(cameraPos.current);
+      state.camera.lookAt(cameraTarget.current);
+    }
   });
 
   return (
     <group ref={body}>
-      {/* ========================================= */}
-      {/* UPGRADED VISUAL MODEL */}
-      {/* ========================================= */}
-
-      {/* Main Fuselage — Custom GLSL Holographic Metal Shader (OpenGL) */}
+      {/* Main Fuselage — Holographic Metal Shader */}
       <mesh castShadow position={[0, 0, -0.5]} scale={[0.7, 0.8, 3.5]}>
         <sphereGeometry args={[1, 64, 32]} />
-        <fuselageShaderMaterial ref={fuselageShaderRef} />
+        <fuselageShaderMaterial ref={fuselageRef} />
       </mesh>
 
-      {/* Red Accent Paint/Striping — Custom GLSL Energy Flow Shader (OpenGL) */}
+      {/* Accent stripe */}
       <mesh castShadow position={[0, 0, -0.5]} scale={[0.72, 0.3, 3.5]}>
         <sphereGeometry args={[1, 64, 32]} />
-        <accentEnergyMaterial ref={accentShaderRef} />
+        <accentEnergyMaterial ref={accentRef} />
       </mesh>
 
-      {/* Engine Cowling (Nose) — Custom GLSL Shader (OpenGL) */}
+      {/* Engine Cowling */}
       <mesh castShadow position={[0, 0, 2.7]} scale={[0.65, 0.7, 0.8]}>
         <sphereGeometry args={[1, 32, 32]} />
         <fuselageShaderMaterial />
       </mesh>
 
-      {/* Cockpit Canopy (Refractive Glass) */}
+      {/* Cockpit Canopy */}
       <mesh castShadow position={[0, 0.6, 0.2]} scale={[0.5, 0.45, 0.9]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshPhysicalMaterial
@@ -440,19 +445,29 @@ const Plane = ({
         />
       </mesh>
 
-      {/* Main Wings (Elliptical flattened spheres) */}
+      {/* Main Wings */}
       <mesh castShadow position={[0, -0.15, 0.5]} scale={[4.8, 0.06, 0.85]}>
         <sphereGeometry args={[1, 64, 32]} />
         <meshStandardMaterial color="#e0e8f0" metalness={0.5} roughness={0.3} />
       </mesh>
 
-      {/* Tail - Horizontal Stabilizer */}
+      {/* Wing Flaps (animated) */}
+      <mesh ref={leftFlapRef}  castShadow position={[-2.8, -0.18, -0.15]} scale={[1.6, 0.055, 0.45]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#c8d8e8" metalness={0.4} roughness={0.35} />
+      </mesh>
+      <mesh ref={rightFlapRef} castShadow position={[ 2.8, -0.18, -0.15]} scale={[1.6, 0.055, 0.45]}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#c8d8e8" metalness={0.4} roughness={0.35} />
+      </mesh>
+
+      {/* Horizontal Stabilizer */}
       <mesh castShadow position={[0, 0.1, -3.4]} scale={[1.8, 0.04, 0.5]}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshStandardMaterial color="#e0e8f0" metalness={0.5} roughness={0.3} />
       </mesh>
 
-      {/* Tail - Vertical Stabilizer */}
+      {/* Vertical Stabilizer */}
       <mesh castShadow position={[0, 0.8, -3.5]} scale={[0.05, 0.9, 0.6]} rotation={[-0.2, 0, 0]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#c42b2b" metalness={0.4} roughness={0.3} />
@@ -460,19 +475,16 @@ const Plane = ({
 
       {/* Propeller System */}
       <group ref={propRef} position={[0, 0, 3.45]}>
-        {/* Spinner Hub */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <coneGeometry args={[0.25, 0.6, 32]} />
           <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.2} />
         </mesh>
-        {/* Blades */}
         {[0, Math.PI * 2 / 3, Math.PI * 4 / 3].map((angle, i) => (
           <group key={i} rotation={[0, 0, angle]}>
             <mesh position={[0, 0.8, 0]}>
               <boxGeometry args={[0.12, 1.4, 0.03]} />
               <meshStandardMaterial color="#111111" metalness={0.5} roughness={0.4} />
             </mesh>
-            {/* Yellow Blade Tips */}
             <mesh position={[0, 1.4, 0]}>
               <boxGeometry args={[0.125, 0.2, 0.035]} />
               <meshStandardMaterial color="#ffd700" roughness={0.4} />
@@ -481,44 +493,42 @@ const Plane = ({
         ))}
       </group>
 
-      {/* Landing Gear - Tricycle Setup */}
-      {/* Main Gear (Rear) */}
-      {[-1.2, 1.2].map((x, i) => (
-        <group key={i} position={[x, -0.7, 0.5]}>
-          {/* Strut */}
-          <mesh position={[0, 0.3, 0]} rotation={[0, 0, x > 0 ? 0.3 : -0.3]}>
-            <cylinderGeometry args={[0.04, 0.04, 0.8, 8]} />
+      {/* Landing Gear (animated) */}
+      <group ref={gearGroupRef}>
+        {/* Main gear */}
+        {[-1.2, 1.2].map((x, i) => (
+          <group key={i} position={[x, -0.7, 0.5]}>
+            <mesh position={[0, 0.3, 0]} rotation={[0, 0, x > 0 ? 0.3 : -0.3]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.8, 8]} />
+              <meshStandardMaterial color="#666" metalness={0.8} />
+            </mesh>
+            <mesh rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.25, 0.25, 0.15, 16]} />
+              <meshStandardMaterial color="#111" roughness={0.9} />
+            </mesh>
+            <mesh rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.12, 0.12, 0.16, 16]} />
+              <meshStandardMaterial color="#ccc" metalness={0.7} />
+            </mesh>
+          </group>
+        ))}
+        {/* Nose wheel */}
+        <group position={[0, -0.6, 2.2]}>
+          <mesh position={[0, 0.2, 0]}>
+            <cylinderGeometry args={[0.03, 0.03, 0.5, 8]} />
             <meshStandardMaterial color="#666" metalness={0.8} />
           </mesh>
-          {/* Tire */}
           <mesh rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.25, 0.25, 0.15, 16]} />
+            <cylinderGeometry args={[0.18, 0.18, 0.12, 16]} />
             <meshStandardMaterial color="#111" roughness={0.9} />
           </mesh>
-          {/* Rim */}
-          <mesh rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.12, 0.12, 0.16, 16]} />
-            <meshStandardMaterial color="#ccc" metalness={0.7} />
-          </mesh>
         </group>
-      ))}
-
-      {/* Front Nose Wheel */}
-      <group position={[0, -0.6, 2.2]}>
-        <mesh position={[0, 0.2, 0]}>
-          <cylinderGeometry args={[0.03, 0.03, 0.5, 8]} />
-          <meshStandardMaterial color="#666" metalness={0.8} />
-        </mesh>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.18, 0.18, 0.12, 16]} />
-          <meshStandardMaterial color="#111" roughness={0.9} />
-        </mesh>
       </group>
 
-      {/* Dynamic Lighting Highlights */}
+      {/* Nav lights */}
       <pointLight position={[-6, 0.5, 0.5]} color="#ff3333" intensity={2} distance={5} />
-      <pointLight position={[6, 0.5, 0.5]} color="#33ff33" intensity={2} distance={5} />
-      <pointLight position={[0, 2, -3]} color="#ffffff" intensity={5} distance={10} />
+      <pointLight position={[ 6, 0.5, 0.5]} color="#33ff33" intensity={2} distance={5} />
+      <pointLight position={[ 0, 2, -3]}    color="#ffffff" intensity={5} distance={10} />
     </group>
   );
 };

@@ -191,7 +191,7 @@ const App = () => {
             />
           )}
 
-          <Canvas key={canvasKey} style={{ position: "fixed", inset: 0 }}>
+          <Canvas key={canvasKey} style={{ position: "fixed", inset: 0, zIndex: 1 }}>
             <Physics broadphase="SAP" gravity={getGravity()}>
               <Scene
                 mode={gameMode}

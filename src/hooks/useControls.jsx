@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import simStore from "../simStore";
 
-const useControls = ({ toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk } = {}) => {
+const useControls = ({ toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk, onGearToggle, onCameraSwitch } = {}) => {
   const keys = useRef({});
 
   useEffect(() => {
@@ -13,6 +13,8 @@ const useControls = ({ toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hor
       if (e.code === "KeyQ" && shiftDown) shiftDown();
       if (e.code === "KeyH" && toggleHeadlights) toggleHeadlights();
       if (e.code === "KeyF" && hornHonk) hornHonk();
+      if (e.code === "KeyL" && onGearToggle) onGearToggle();
+      if (e.code === "KeyC" && onCameraSwitch) onCameraSwitch();
     };
     const onUp = (e) => { keys.current[e.code] = false; };
 
@@ -22,7 +24,7 @@ const useControls = ({ toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hor
       window.removeEventListener("keydown", onDown);
       window.removeEventListener("keyup", onUp);
     };
-  }, [toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk]);
+  }, [toggleIgnition, shiftUp, shiftDown, toggleHeadlights, hornHonk, onGearToggle, onCameraSwitch]);
 
   const merged = new Proxy(keys, {
     get(target, prop) {
