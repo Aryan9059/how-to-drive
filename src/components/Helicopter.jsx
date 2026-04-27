@@ -21,8 +21,9 @@ const CabinShaderMaterial = shaderMaterial(
     uGlowColor: new THREE.Color("#44aaff"),
     uMetalness: 0.65,
   },
+
   // Vertex Shader (GLSL - OpenGL)
-  /* glsl */ `
+  `
     uniform float uTime;
     varying vec3 vNormal;
     varying vec3 vViewDir;
@@ -38,8 +39,9 @@ const CabinShaderMaterial = shaderMaterial(
       gl_Position = projectionMatrix * mvPos;
     }
   `,
+
   // Fragment Shader (GLSL - OpenGL)
-  /* glsl */ `
+  `
     uniform float uTime;
     uniform vec3 uBaseColor;
     uniform vec3 uGlowColor;
@@ -167,6 +169,8 @@ const Helicopter = ({
   const pitch = useRef(0);
   const roll = useRef(0);
   const collective = useRef(0);
+  const gearDown = useRef(true);
+  const prevGKey = useRef(false);
   const cameraPos = useRef(new Vector3());
   const cameraTarget = useRef(new Vector3());
 
@@ -191,61 +195,93 @@ const Helicopter = ({
   useFrame((state, delta) => {
     const k = keys.current;
 
-    // Throttle/Collective
+    // ── Landing Gear Toggle (G key, tap) ──────────────────────
+    if (k.KeyG && !prevGKey.current) {
+      gearDown.current = !gearDown.current;
+    }
+    prevGKey.current = !!k.KeyG;
+
+    // ── Collective (W = climb, S = descend) ───────────────────
     if (k.KeyW) collective.current = Math.min(1, collective.current + delta * 1.2);
     else if (k.KeyS) collective.current = Math.max(0, collective.current - delta * 0.8);
+    // Ctrl → gradual descent (reduces collective slowly)
+    else if (k.ControlLeft) collective.current = Math.max(0, collective.current - delta * 0.4);
     else collective.current += (0.5 - collective.current) * Math.min(1, delta * 0.5);
 
-    // Yaw (Tail Rotor Control)
+    // ── Boost modifier (Shift) ────────────────────────────────
+    const boostMul = (k.ShiftLeft || k.ShiftRight) ? 1.5 : 1.0;
+
+    // ── Yaw (A = rotate left, D = rotate right) ──────────────
     if (k.KeyA) yaw.current += delta * 1.8;
     if (k.KeyD) yaw.current -= delta * 1.8;
 
-    // Pitch (Forward/Back)
-    const targetPitch = k.ArrowUp || k.KeyI || k.ShiftLeft || k.ShiftRight ? -0.5 : k.ArrowDown || k.KeyK || k.Space ? 0.35 : 0;
-    pitch.current += (targetPitch - pitch.current) * Math.min(1, delta * 5);
+    // ── Hover Stabilization (Space = auto-level) ─────────────
+    if (k.Space) {
+      // Rapidly return pitch and roll to 0
+      pitch.current += (0 - pitch.current) * Math.min(1, delta * 8);
+      roll.current += (0 - roll.current) * Math.min(1, delta * 8);
+    } else {
+      // ── Cyclic: Pitch (Arrow Up/Down) ──────────────────────
+      const targetPitch = k.ArrowUp ? -0.5 * boostMul : k.ArrowDown ? 0.35 * boostMul : 0;
+      pitch.current += (targetPitch - pitch.current) * Math.min(1, delta * 5);
 
-    // --- BUG FIX: Inverted Roll ---
-    // Swapped the input values: Left is now -0.45, Right is now 0.45
-    const targetRoll = k.ArrowLeft || k.KeyJ ? -0.45 : k.ArrowRight || k.KeyL ? 0.45 : 0;
-    roll.current += (targetRoll - roll.current) * Math.min(1, delta * 5);
+      // ── Cyclic: Roll (Arrow Left/Right) ────────────────────
+      const arrowRoll = k.ArrowLeft ? -0.45 * boostMul : k.ArrowRight ? 0.45 * boostMul : 0;
+      // ── Fine Roll (Q/E) ────────────────────────────────────
+      const fineRoll = k.KeyQ ? -0.2 : k.KeyE ? 0.2 : 0;
+      const targetRoll = arrowRoll || fineRoll;
+      roll.current += (targetRoll - roll.current) * Math.min(1, delta * 5);
+    }
 
-    if (!k.ArrowUp && !k.ArrowDown && !k.KeyI && !k.KeyK && !k.ShiftLeft && !k.ShiftRight && !k.Space) {
+    // Natural damping when no input
+    if (!k.ArrowUp && !k.ArrowDown && !k.Space) {
       pitch.current *= 0.97;
     }
-    if (!k.ArrowLeft && !k.ArrowRight && !k.KeyJ && !k.KeyL) {
+    if (!k.ArrowLeft && !k.ArrowRight && !k.KeyQ && !k.KeyE && !k.Space) {
       roll.current *= 0.97;
     }
 
+    // ── Telemetry ─────────────────────────────────────────────
     const [vx, vy, vz] = velocity.current;
-    const currentSpeedKmh = Math.sqrt(vx * vx + vy * vy + vz * vz) * 3.6;
+    const horizontalSpeed = Math.sqrt(vx * vx + vz * vz) * 3.6;
+    const totalSpeed = Math.sqrt(vx * vx + vy * vy + vz * vz) * 3.6;
 
-    simStore.speed = currentSpeedKmh;
+    // Heading from yaw (convert to 0-360 degrees)
+    const headingDeg = (((-yaw.current * 180) / Math.PI) % 360 + 360) % 360;
+
+    simStore.speed = totalSpeed;
     simStore.engineState = "on";
     simStore.gear = collective.current > 0.1 ? 1 : 0;
     simStore.rpm = collective.current * 8000;
     simStore.altitude = position.current.y;
 
-    // Lift Force
+    // Helicopter-specific telemetry for HUD
+    simStore.heliPitch = pitch.current * (180 / Math.PI) * 3; // amplify for display
+    simStore.heliRoll = roll.current * (180 / Math.PI) * 3;
+    simStore.heliHeading = headingDeg;
+    simStore.heliVerticalSpeed = vy;
+    simStore.heliThrottle = collective.current;
+    simStore.heliGearDown = gearDown.current;
+
+    // ── Physics Forces ────────────────────────────────────────
     const WEIGHT = 1200 * 9.82;
     const liftForce = collective.current * WEIGHT * 2.2;
     bodyApi.applyForce([0, liftForce - WEIGHT, 0], [0, 0, 0]);
 
-    // Calculate Directional Vectors
+    // Directional Vectors
     const fwdX = -Math.sin(yaw.current);
     const fwdZ = -Math.cos(yaw.current);
     const rightX = Math.cos(yaw.current);
     const rightZ = -Math.sin(yaw.current);
 
-    // --- BUG FIX: Physics Force Application ---
-    // Changed '- roll.current' to '+ roll.current' to align with the new input signs
-    const horizontalForce = 8000 * Math.max(0.3, collective.current);
+    const horizontalForce = 8000 * Math.max(0.3, collective.current) * boostMul;
     bodyApi.applyForce([
       (fwdX * pitch.current + rightX * roll.current) * horizontalForce,
       0,
       (fwdZ * pitch.current + rightZ * roll.current) * horizontalForce,
     ], [0, 0, 0]);
 
-    // Visual Rotation (Keeps the negative multiplier to ensure it leans into the turn visually)
+    // Visual Rotation
     const visQuat = new Quaternion();
     visQuat.setFromEuler(new Euler(-pitch.current * 0.5, yaw.current, -roll.current * 0.5, 'YXZ'));
     bodyApi.quaternion.set(visQuat.x, visQuat.y, visQuat.z, visQuat.w);
@@ -272,6 +308,7 @@ const Helicopter = ({
       pitch.current = 0;
       roll.current = 0;
       yaw.current = startRotation[1];
+      gearDown.current = true;
     }
 
     // Camera Logic

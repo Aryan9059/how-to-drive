@@ -5,7 +5,7 @@ import TouchControls from "./TouchControls";
 
 const allMissions = [...LESSONS, ...PLANE_MISSIONS, ...HELICOPTER_MISSIONS];
 const isTouchDevice = () =>
-  typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+  typeof window !== "undefined" && window.innerWidth <= 1024 && ("ontouchstart" in window || navigator.maxTouchPoints > 0);
 
 /* ── Shared gauge (car / helicopter) ─────────────────────── */
 const Gauge = ({ value, max, color, label, unit, redline }) => {
@@ -316,6 +316,44 @@ const PlaneHUD = ({ tel }) => (
   </div>
 );
 
+/* Helicopter-specific HUD panel */
+const HeliGearIndicator = ({ gearDown }) => (
+  <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4,
+    background:"rgba(0,0,0,0.55)", border:`1px solid ${gearDown ? "rgba(34,197,94,0.5)" : "rgba(239,68,68,0.5)"}`,
+    borderRadius:6, padding:"6px 10px" }}>
+    <span style={{ fontSize:8, color:"rgba(255,255,255,0.45)", letterSpacing:1, fontFamily:"monospace" }}>SKID</span>
+    <span style={{ fontSize:20 }}>{gearDown ? "🟢" : "🔴"}</span>
+    <span style={{ fontSize:9, fontWeight:700, color: gearDown ? "#22c55e" : "#ef4444", fontFamily:"monospace" }}>
+      {gearDown ? "DN" : "UP"}
+    </span>
+    <span style={{ fontSize:7, color:"rgba(255,255,255,0.3)", fontFamily:"monospace" }}>G</span>
+  </div>
+);
+
+const HeliHUD = ({ tel }) => (
+  <div style={{ position:"fixed", bottom:0, left:0, right:0, pointerEvents:"none",
+    display:"flex", flexDirection:"column", alignItems:"center", gap:8, padding:"0 20px 16px",
+    zIndex: 50, fontFamily:"'Poppins', sans-serif" }}>
+
+    {/* Heading tape */}
+    <HeadingTape heading={tel.heliHeading} />
+
+    {/* Middle row: speed tape | collective bar | ADI | VSI | altitude tape */}
+    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+      <TapeGauge value={tel.speed || 0} min={0} max={300} label="SPEED" unit="km/h" color="#22d3ee" width={58} />
+      <ThrottleBar throttle={tel.heliThrottle || 0} />
+      <ADI pitch={tel.heliPitch || 0} roll={tel.heliRoll || 0} />
+      <VSI vsi={tel.heliVerticalSpeed || 0} />
+      <TapeGauge value={tel.altitude || 0} min={0} max={1000} label="ALTITUDE" unit="m" color="#a3e635" width={58} />
+    </div>
+
+    {/* Bottom row: gear indicator */}
+    <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+      <HeliGearIndicator gearDown={tel.heliGearDown ?? true} />
+    </div>
+  </div>
+);
+
 /* ── Key hints ─────────────────────────────────────────────── */
 const PLANE_KEYS = [
   ["W / S",   "Throttle ▲ / ▼"],
@@ -328,7 +366,18 @@ const PLANE_KEYS = [
   ["C",       "Cycle Camera"],
   ["R",       "Reset"],
 ];
-const HELI_KEYS = [["W","CLIMB ▲"],["S","DESCEND ▼"],["A/D","Yaw L/R"],["↑↓","Fwd/Back"],["←→","Strafe"],["R","Reset"]];
+const HELI_KEYS = [
+  ["W / S",   "Collective ▲ / ▼"],
+  ["A / D",   "Yaw L / R"],
+  ["↑ / ↓",   "Pitch Fwd / Back"],
+  ["← / →",   "Roll L / R"],
+  ["Q / E",   "Fine Roll"],
+  ["Shift",   "Boost"],
+  ["Space",   "Hover Stabilize"],
+  ["Ctrl",    "Gradual Descend"],
+  ["G",       "Landing Gear"],
+  ["R",       "Reset"],
+];
 const CAR_KEYS  = [["I","Ignition"],["W/S","Throttle/Brake"],["E/Q","Gear ▲/▼"],["C","Clutch"],["SPACE","Handbrake"],["H","Headlights"],["V","Camera"]];
 
 const KeyHints = ({ vehicleType }) => {
@@ -347,7 +396,7 @@ const KeyHints = ({ vehicleType }) => {
 /* ══════════════════════════════════════════════════════════════
    MAIN SimHUD
 ══════════════════════════════════════════════════════════════ */
-const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
+const SimHUD = ({ lessonId, mode, vehicleType = "car", lessonPhase }) => {
   const [tel, setTel] = useState({ ...simStore });
   useEffect(() => {
     const id = setInterval(() => setTel({ ...simStore }), 80);
@@ -368,6 +417,7 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
   const lesson    = lessonId ? allMissions.find((l) => l.id === lessonId) : null;
   const gearName  = GEAR_NAMES[tel.gear] ?? "N";
   const touch     = isTouchDevice();
+  const showTouch = touch && (mode !== "lesson" || lessonPhase === "active");
   const violations = tel.trafficViolations || 0;
   const isAerial  = vehicleType === "plane" || vehicleType === "helicopter";
 
@@ -398,52 +448,32 @@ const SimHUD = ({ lessonId, mode, vehicleType = "car" }) => {
 
         {lesson && <div className="simhud-objective">🎯 {lesson.objective}</div>}
 
-        {isAerial && vehicleType !== "plane" && (
-          <div className="simhud-altitude">
-            <span className="altitude-icon">▲</span>
-            <span className="altitude-val">{Math.max(0, Math.round(tel.altitude || 0))} m</span>
-            <span className="altitude-lbl">ALT</span>
-          </div>
-        )}
+
 
         <div className="simhud-topright">
           {!touch && <div className="simhud-esc"><kbd className="hud-key">ESC</kbd> Menu</div>}
         </div>
 
-        {!touch && vehicleType !== "plane" && (
+        {!touch && vehicleType === "car" && (
           <div className="simhud-panel">
-            {vehicleType === "car" && (
-              <>
-                <Gauge value={tel.rpm / 20} max={ENGINE_CONFIG.maxRpm / 20} color="#6366f1" label="RPM" unit="" redline={ENGINE_CONFIG.redlineRpm / 20} />
-                <div className="gear-display">
-                  <div className="gear-digit">{gearName}</div>
-                  <div className="gear-label">GEAR</div>
-                  <EngineLight state={tel.engineState} />
-                </div>
-                <Gauge value={tel.speed} max={200} color="#22d3ee" label="SPEED" unit="km/h" />
-              </>
-            )}
-            {vehicleType === "helicopter" && (
-              <>
-                <Gauge value={(tel.rpm / 8000) * 100} max={100} color="#34d399" label="COLLECTIVE" unit="%" />
-                <div className="gear-display">
-                  <div className="gear-digit" style={{ fontSize:"1.2rem" }}>🚁</div>
-                  <div className="gear-label">MODE</div>
-                  <EngineLight state={tel.engineState} />
-                </div>
-                <Gauge value={tel.speed} max={150} color="#22d3ee" label="SPEED" unit="km/h" />
-              </>
-            )}
+            <Gauge value={tel.rpm / 20} max={ENGINE_CONFIG.maxRpm / 20} color="#6366f1" label="RPM" unit="" redline={ENGINE_CONFIG.redlineRpm / 20} />
+            <div className="gear-display">
+              <div className="gear-digit">{gearName}</div>
+              <div className="gear-label">GEAR</div>
+              <EngineLight state={tel.engineState} />
+            </div>
+            <Gauge value={tel.speed} max={200} color="#22d3ee" label="SPEED" unit="km/h" />
           </div>
         )}
 
         {!touch && <KeyHints vehicleType={vehicleType} />}
       </div>
 
-      {/* Plane HUD rendered separately at bottom */}
+      {/* Aviation HUD panels rendered separately at bottom */}
       {!touch && vehicleType === "plane" && <PlaneHUD tel={tel} />}
+      {!touch && vehicleType === "helicopter" && <HeliHUD tel={tel} />}
 
-      {touch && <TouchControls gear={tel.gear} headlightsOn={tel.headlightsOn} />}
+      {showTouch && <TouchControls vehicleType={vehicleType} gear={tel.gear} headlightsOn={tel.headlightsOn} />}
     </>
   );
 };

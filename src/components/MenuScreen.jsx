@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LESSONS, FREE_DRIVE_TRACKS, TIME_OF_DAY, PLANE_MISSIONS, HELICOPTER_MISSIONS, VEHICLE_CATEGORIES } from "../gameConfig";
-import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass, Play, ChevronLeft, Car, Volume2, VolumeX, Plane, Wind, Navigation } from 'lucide-react';
+import { Lock, BookOpen, Flag, CircleDashed, CircleDot, CheckCircle2, Trophy, Compass, Play, ChevronLeft, Car, Volume2, VolumeX, Plane, Wind, Navigation, Menu, X } from 'lucide-react';
 
 
 const VehicleIcon = ({ id, size = 28 }) => {
@@ -30,6 +30,7 @@ const MenuScreen = ({
   const [selectedTod, setSelectedTod] = useState("day");
   const [selectedVehicle, setSelectedVehicle] = useState("car");
   const [selectedMode, setSelectedMode] = useState("missions");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const isUnlocked = (idx, vehicleId) => {
     if (idx === 0) return true;
@@ -97,20 +98,28 @@ const MenuScreen = ({
   const renderVehicleSelection = () => (
     <div className="splash-content" style={{ width: '100%' }}>
       <header className="menu-header">
-        <h1 className="menu-title" style={{ fontSize: '3rem' }}>Select <span className="menu-title-accent">Vehicle</span></h1>
-        <p className="menu-subtitle">Choose your machine to master.</p>
+        <h1 className="menu-title vehicle-header-title" style={{ fontSize: '3rem' }}>Select <span className="menu-title-accent">Vehicle</span></h1>
+        <p className="menu-subtitle vehicle-header-subtitle">Choose your machine to master.</p>
       </header>
 
-      <div className="mode-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+      <div className="mode-grid vehicle-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         {VEHICLE_CATEGORIES.map(v => (
-          <div key={v.id} className="mode-card" onClick={() => { setSelectedVehicle(v.id); setMenuStep(selectedMode); }}>
-            <div style={{ width: '100%', aspectRatio: '1/1', background: '#111', borderRadius: '8px', marginBottom: '16px', overflow: 'hidden' }}>
+          <div key={v.id} className="mode-card" onClick={() => { 
+            setSelectedVehicle(v.id); 
+            if (selectedMode === "free_roam") {
+              const randomTod = TIME_OF_DAY[Math.floor(Math.random() * TIME_OF_DAY.length)].id;
+              onFreeDrive(FREE_DRIVE_TRACKS[0].id, "easy", randomTod, v.id);
+            } else {
+              setMenuStep(selectedMode); 
+            }
+          }}>
+            <div style={{ width: '100%', aspectRatio: '1/1', background: '#111', borderRadius: '32px', marginBottom: '16px', overflow: 'hidden' }}>
               <img src={v.url} alt={v.label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             <h3 className="mode-card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-              <span className="vehicle-tab-emoji">{v.emoji}</span> {v.label}
+              {v.label}
             </h3>
-            <p className="mode-card-desc" style={{ fontSize: '0.9rem' }}>{v.description}</p>
+            <p className="mode-card-desc vehicle-desc-mobile" style={{ fontSize: '0.9rem' }}>{v.description}</p>
           </div>
         ))}
       </div>
@@ -141,7 +150,7 @@ const MenuScreen = ({
 
       <div className="menu-inner">
         <button
-          className="tod-btn"
+          className="tod-btn desktop-only-btn"
           onClick={onToggleMusic}
           style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 100 }}
         >
@@ -149,23 +158,63 @@ const MenuScreen = ({
           <span className="tod-lbl">{musicMuted ? "Music Off" : "Music On"}</span>
         </button>
 
+        <button
+          className="mobile-hamburger-btn"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 101, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px', color: 'white', display: 'none', alignItems: 'center', justifyContent: 'center' }}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+
+        {isMobileMenuOpen && (
+          <div className="mobile-hamburger-menu" style={{ position: 'absolute', top: '70px', right: '20px', zIndex: 100, background: 'rgba(20, 20, 20, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '16px', display: 'none', flexDirection: 'column', gap: '16px', minWidth: '200px', boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+            
+            <div className="menu-group">
+              <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '8px', display: 'block' }}>AUDIO</label>
+              <button
+                className="tod-btn"
+                onClick={onToggleMusic}
+                style={{ width: '100%', justifyContent: 'flex-start' }}
+              >
+                {musicMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                <span className="tod-lbl">{musicMuted ? "Music Off" : "Music On"}</span>
+              </button>
+            </div>
+
+            {menuStep === "missions" && (
+              <>
+                <div className="menu-group">
+                  <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '8px', display: 'block' }}>MODE</label>
+                  <select className="mobile-select" value={difficulty} onChange={(e) => onDifficultyChange(e.target.value)} style={{ width: '100%' }}>
+                    <option value="easy">Easy Mode</option>
+                    <option value="manual">Manual Mode</option>
+                  </select>
+                </div>
+
+                <div className="menu-group">
+                  <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '8px', display: 'block' }}>TIME OF DAY</label>
+                  <select className="mobile-select" value={selectedTod} onChange={(e) => setSelectedTod(e.target.value)} style={{ width: '100%' }}>
+                    {TIME_OF_DAY.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  </select>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
         {menuStep === "splash" && renderSplash()}
         {menuStep === "mode_selection" && renderModeSelection()}
         {menuStep === "vehicle_selection" && renderVehicleSelection()}
 
-        {(menuStep === "missions" || menuStep === "free_roam") && (
-          <>
-            <button className="menu-back-btn" onClick={() => setMenuStep("vehicle_selection")}>
-              <ChevronLeft size={18} /> Back
-            </button>
-
+        {menuStep === "missions" && (
+          <div className="splash-content" style={{ width: '100%' }}>
             <header className="menu-header">
-              <h1 className="menu-title" style={{ fontSize: '2.5rem' }}>
-                {menuStep === "missions" ? <>Drive <span className="menu-title-accent">Missions</span></> : <>Free <span className="menu-title-accent">Roam</span></>}
+              <h1 className="menu-title vehicle-header-title">
+                Drive <span className="menu-title-accent">Missions</span>
               </h1>
             </header>
 
-            <div className="diff-toggle">
+            <div className="diff-toggle desktop-filters">
               <span className="diff-label">Mode:</span>
               {["easy", "manual"].map((d) => (
                 <button
@@ -180,7 +229,7 @@ const MenuScreen = ({
               ))}
             </div>
 
-            <div className="tod-row">
+            <div className="tod-row desktop-filters">
               {TIME_OF_DAY.map((t) => (
                 <button
                   key={t.id}
@@ -194,52 +243,39 @@ const MenuScreen = ({
             </div>
 
             <div className="level-grid">
-              {menuStep === "missions" ? (
-                currentMissions.map((mission, idx) => {
-                  const unlocked = isUnlocked(idx, selectedVehicle);
-                  const stars = completedLessons[mission.id];
-                  const done = stars !== undefined;
-                  return (
-                    <button
-                      key={mission.id}
-                      className={`level-card ${!unlocked ? "level-card--locked" : ""}`}
-                      onClick={() => unlocked && onStartLesson(mission.id, difficulty, selectedTod, selectedVehicle)}
-                      disabled={!unlocked}
-                    >
-                      <div className="level-card-num">{String(idx + 1).padStart(2, "0")}</div>
-                      <div className="level-card-icon">{unlocked ? <mission.icon size={32} /> : <Lock size={32} opacity={0.5} />}</div>
-                      <div className="level-card-info">
-                        <h3 className="level-card-name">{mission.title}</h3>
-                        <p className="level-card-desc">{mission.description}</p>
-                      </div>
-                      {done && (
-                        <span className="done-badge">
-                          {"★".repeat(stars)}{"☆".repeat(3 - stars)}
-                        </span>
-                      )}
-                      {!unlocked && <span className="lock-badge">Locked</span>}
-                      <div className="level-card-check"><CheckCircle2 size={16} /></div>
-                    </button>
-                  );
-                })
-              ) : (
-                FREE_DRIVE_TRACKS.map((t) => (
+              {currentMissions.map((mission, idx) => {
+                const unlocked = isUnlocked(idx, selectedVehicle);
+                const stars = completedLessons[mission.id];
+                const done = stars !== undefined;
+                return (
                   <button
-                    key={t.id}
-                    className="level-card"
-                    onClick={() => onFreeDrive(t.id, difficulty, selectedTod)}
+                    key={mission.id}
+                    className={`level-card ${!unlocked ? "level-card--locked" : ""}`}
+                    onClick={() => unlocked && onStartLesson(mission.id, difficulty, selectedTod, selectedVehicle)}
+                    disabled={!unlocked}
                   >
-                    <div className="level-card-icon"><t.icon size={36} /></div>
+                    <div className="level-card-num">{String(idx + 1).padStart(2, "0")}</div>
+                    <div className="level-card-icon">{unlocked ? <mission.icon size={32} /> : <Lock size={32} opacity={0.5} />}</div>
                     <div className="level-card-info">
-                      <h3 className="level-card-name">{t.name}</h3>
-                      <p className="level-card-desc">{t.desc || ""}</p>
+                      <h3 className="level-card-name">{mission.title}</h3>
+                      <p className="level-card-desc">{mission.description}</p>
                     </div>
+                    {done && (
+                      <span className="done-badge">
+                        {"★".repeat(stars)}{"☆".repeat(3 - stars)}
+                      </span>
+                    )}
+                    {!unlocked && <span className="lock-badge">Locked</span>}
                     <div className="level-card-check"><CheckCircle2 size={16} /></div>
                   </button>
-                ))
-              )}
+                );
+              })}
             </div>
-          </>
+
+            <button className="menu-back-btn" onClick={() => setMenuStep("vehicle_selection")}>
+              <ChevronLeft size={18} /> Back
+            </button>
+          </div>
         )}
 
         {menuStep !== "splash" && (

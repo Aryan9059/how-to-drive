@@ -63,11 +63,11 @@ const App = () => {
     setGameMode("lesson");
   }, []);
 
-  const startFreeDrive = useCallback((tid, diff, tod = "day") => {
+  const startFreeDrive = useCallback((tid, diff, tod = "day", vehicle = "car") => {
     setTrackId(tid);
     setDifficulty(diff);
     setTimeOfDay(tod);
-    setVehicleType("car");
+    setVehicleType(vehicle);
     setCanvasKey((k) => k + 1);
     setGameMode("freeDrive");
   }, []);
@@ -175,6 +175,7 @@ const App = () => {
             lessonId={gameMode === "lesson" ? lessonId : null}
             mode={gameMode}
             vehicleType={vehicleType}
+            lessonPhase={lessonPhase}
           />
 
           {gameMode === "lesson" && lessonPhase !== "active" && (
