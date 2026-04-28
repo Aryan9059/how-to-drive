@@ -23,15 +23,43 @@ const BackgroundMusic = ({ mode, muted }) => {
     window.addEventListener("click", handleInteraction);
     window.addEventListener("keydown", handleInteraction);
 
+    const handleVisibility = () => {
+      if (!audioRef.current) return;
+      if (document.visibilityState === "hidden") {
+        audioRef.current.pause();
+      } else if (!muted && initialized.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+
+    const handleBlur = () => {
+      if (audioRef.current) audioRef.current.pause();
+    };
+
+    const handleFocus = () => {
+      if (audioRef.current && !muted && initialized.current) {
+        audioRef.current.play().catch(() => {});
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("pagehide", handleBlur);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+
     return () => {
       window.removeEventListener("click", handleInteraction);
       window.removeEventListener("keydown", handleInteraction);
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("pagehide", handleBlur);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
     };
-  }, []);
+  }, [muted]);
 
   useEffect(() => {
     if (audioRef.current) {
